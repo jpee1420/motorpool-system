@@ -49,6 +49,16 @@ new class extends Component
                     <x-nav-link :href="route('calendar.index')" :active="request()->routeIs('calendar.*')" wire:navigate>
                         {{ __('Calendar') }}
                     </x-nav-link>
+
+                    <x-nav-link :href="route('trip-tickets.index')" :active="request()->routeIs('trip-tickets.*')" wire:navigate>
+                        {{ __('Trip tickets') }}
+                    </x-nav-link>
+
+                    @if (auth()->user()?->role === 'admin')
+                        <x-nav-link :href="route('account.users')" :active="request()->routeIs('account.users')" wire:navigate>
+                            {{ __('Users') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -116,6 +126,16 @@ new class extends Component
             <x-responsive-nav-link :href="route('calendar.index')" :active="request()->routeIs('calendar.*')" wire:navigate>
                 {{ __('Calendar') }}
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('trip-tickets.index')" :active="request()->routeIs('trip-tickets.*')" wire:navigate>
+                {{ __('Trip tickets') }}
+            </x-responsive-nav-link>
+
+            @if (auth()->user()?->role === 'admin')
+                <x-responsive-nav-link :href="route('account.users')" :active="request()->routeIs('account.users')" wire:navigate>
+                    {{ __('Users') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

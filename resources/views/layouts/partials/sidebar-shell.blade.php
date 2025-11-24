@@ -17,7 +17,12 @@
                 ['label' => __('Maintenance'), 'route' => 'maintenance.index', 'pattern' => 'maintenance.*'],
                 ['label' => __('Notifications'), 'route' => 'notifications.index', 'pattern' => 'notifications.*'],
                 ['label' => __('Calendar'), 'route' => 'calendar.index', 'pattern' => 'calendar.*'],
+                ['label' => __('Trip tickets'), 'route' => 'trip-tickets.index', 'pattern' => 'trip-tickets.*'],
             ];
+
+            if (auth()->user()?->role === 'admin') {
+                $navItems[] = ['label' => __('Users'), 'route' => 'account.users', 'pattern' => 'account.users'];
+            }
         @endphp
 
         <nav class="flex-1 px-2 py-4 space-y-1">

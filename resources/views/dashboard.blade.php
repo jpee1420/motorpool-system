@@ -112,6 +112,64 @@
                     </div>
                 </div>
             </div>
+
+            <div class="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-gray-900">{{ __('Recent notifications') }}</h3>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">{{ __('Time') }}</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">{{ __('Vehicle') }}</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">{{ __('Type') }}</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">{{ __('Channel') }}</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">{{ __('Status') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                @forelse ($recentNotifications as $log)
+                                    <tr>
+                                        <td class="px-3 py-2 whitespace-nowrap text-gray-700">
+                                            {{ $log->sent_at?->diffForHumans() ?? '—' }}
+                                        </td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-gray-900">
+                                            {{ $log->vehicle?->plate_number ?? '—' }}
+                                        </td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-gray-700">
+                                            {{ $log->type }}
+                                        </td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-gray-700">
+                                            {{ strtoupper($log->channel) }}
+                                        </td>
+                                        <td class="px-3 py-2 whitespace-nowrap">
+                                            @php
+                                                $statusClasses = [
+                                                    'sent' => 'bg-green-100 text-green-800',
+                                                    'failed' => 'bg-red-100 text-red-800',
+                                                    'pending' => 'bg-yellow-100 text-yellow-800',
+                                                ];
+                                                $statusClass = $statusClasses[$log->status] ?? 'bg-gray-100 text-gray-800';
+                                            @endphp
+                                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $statusClass }}">
+                                                {{ ucfirst($log->status) }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-3 py-4 text-center text-gray-500">
+                                            {{ __('No notifications have been sent yet.') }}
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </x-app-layout>

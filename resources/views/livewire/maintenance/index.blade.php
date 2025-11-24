@@ -56,6 +56,9 @@
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                 {{ __('Total cost') }}
                             </th>
+                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                {{ __('Actions') }}
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
@@ -79,10 +82,18 @@
                                 <td class="px-3 py-3 whitespace-nowrap text-gray-900 font-medium">
                                     ₱{{ number_format($record->total_cost, 2) }}
                                 </td>
+                                <td class="px-3 py-3 whitespace-nowrap text-right">
+                                    <a
+                                        href="{{ route('maintenance.show', $record) }}"
+                                        class="text-sm font-medium text-indigo-600 hover:text-indigo-900"
+                                    >
+                                        {{ __('View') }}
+                                    </a>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-3 py-6 text-center text-gray-500">
+                                <td colspan="7" class="px-3 py-6 text-center text-gray-500">
                                     {{ __('No maintenance records yet.') }}
                                 </td>
                             </tr>

@@ -1,0 +1,193 @@
+<div class="py-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold text-gray-900">
+                    {{ __('Maintenance detail') }}
+                </h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    {{ __('Review work done, costs, and materials for this maintenance record.') }}
+                </p>
+            </div>
+
+            <a
+                href="{{ route('maintenance.index') }}"
+                class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+                {{ __('Back to maintenance list') }}
+            </a>
+        </div>
+
+        <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-gray-900">
+                {{ __('Vehicle') }}
+            </h2>
+
+            <dl class="grid gap-4 sm:grid-cols-2 text-sm">
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Plate number') }}</dt>
+                    <dd class="mt-1 text-gray-900">{{ $record->vehicle?->plate_number ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Make / Model') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        {{ trim(($record->vehicle?->make ?? '').' '.($record->vehicle?->model ?? '')) ?: '—' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Year') }}</dt>
+                    <dd class="mt-1 text-gray-900">{{ $record->vehicle?->year ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Driver / operator') }}</dt>
+                    <dd class="mt-1 text-gray-900">{{ $record->vehicle?->driver_operator ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Current odometer') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        @if ($record->vehicle?->current_odometer)
+                            {{ number_format($record->vehicle->current_odometer) }} km
+                        @else
+                            —
+                        @endif
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Status') }}</dt>
+                    <dd class="mt-1 text-gray-900 capitalize">{{ $record->vehicle?->status ?? '—' }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-gray-900">
+                {{ __('Maintenance details') }}
+            </h2>
+
+            <dl class="grid gap-4 sm:grid-cols-2 text-sm">
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Performed at') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        {{ $record->performed_at?->format('M d, Y H:i') ?? '—' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Performed by') }}</dt>
+                    <dd class="mt-1 text-gray-900">{{ $record->performedBy?->name ?? '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Odometer reading') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        {{ $record->odometer_reading ? number_format($record->odometer_reading) . ' km' : '—' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Labor cost') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        ₱{{ number_format($record->personnel_labor_cost, 2) }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Materials cost') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        ₱{{ number_format($record->materials_cost_total, 2) }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Total cost') }}</dt>
+                    <dd class="mt-1 text-gray-900 font-semibold">
+                        ₱{{ number_format($record->total_cost, 2) }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Next maintenance date') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        {{ $record->next_maintenance_due_at?->format('M d, Y') ?? '—' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="font-medium text-gray-500">{{ __('Next maintenance odometer') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        {{ $record->next_maintenance_due_odometer ? number_format($record->next_maintenance_due_odometer) . ' km' : '—' }}
+                    </dd>
+                </div>
+            </dl>
+
+            @if (! empty($record->description_of_work))
+                <div class="pt-4 border-t border-gray-100">
+                    <h3 class="text-sm font-semibold text-gray-900">
+                        {{ __('Description of work done') }}
+                    </h3>
+                    <p class="mt-2 text-sm text-gray-700 whitespace-pre-line">
+                        {{ $record->description_of_work }}
+                    </p>
+                </div>
+            @endif
+        </div>
+
+        <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-gray-900">
+                    {{ __('Materials used') }}
+                </h2>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('Name') }}
+                            </th>
+                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('Description') }}
+                            </th>
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('Quantity') }}
+                            </th>
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('Unit') }}
+                            </th>
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('Unit cost') }}
+                            </th>
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                                {{ __('Total cost') }}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        @forelse ($record->materials as $material)
+                            <tr>
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-900">
+                                    {{ $material->name }}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-gray-700">
+                                    {{ $material->description ?? '—' }}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
+                                    {{ $material->quantity }}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
+                                    {{ $material->unit ?? '—' }}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
+                                    ₱{{ number_format($material->unit_cost, 2) }}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-900 font-medium">
+                                    ₱{{ number_format($material->total_cost, 2) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-3 py-4 text-center text-gray-500">
+                                    {{ __('No materials recorded for this maintenance.') }}
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

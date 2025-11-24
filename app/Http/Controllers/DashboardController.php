@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\MaintenanceRecord;
+use App\Models\NotificationLog;
 use App\Models\Vehicle;
 use Illuminate\View\View;
 
@@ -30,6 +31,12 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $recentNotifications = NotificationLog::with('vehicle')
+            ->whereIn('status', ['sent', 'failed'])
+            ->orderByDesc('sent_at')
+            ->take(5)
+            ->get();
+
         return view('dashboard', compact(
             'totalVehicles',
             'maintenanceRecordCount',
@@ -37,6 +44,7 @@ class DashboardController extends Controller
             'overdueMaintenanceCount',
             'upcomingMaintenance',
             'recentMaintenance',
+            'recentNotifications',
         ));
     }
 }

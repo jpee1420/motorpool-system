@@ -41,6 +41,14 @@ new class extends Component
                     <x-nav-link :href="route('maintenance.index')" :active="request()->routeIs('maintenance.*')" wire:navigate>
                         {{ __('Maintenance') }}
                     </x-nav-link>
+
+                    <x-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')" wire:navigate>
+                        {{ __('Notifications') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('calendar.index')" :active="request()->routeIs('calendar.*')" wire:navigate>
+                        {{ __('Calendar') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -99,6 +107,14 @@ new class extends Component
 
             <x-responsive-nav-link :href="route('maintenance.index')" :active="request()->routeIs('maintenance.*')" wire:navigate>
                 {{ __('Maintenance') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')" wire:navigate>
+                {{ __('Notifications') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('calendar.index')" :active="request()->routeIs('calendar.*')" wire:navigate>
+                {{ __('Calendar') }}
             </x-responsive-nav-link>
         </div>
 

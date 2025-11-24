@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('motorpool:check-maintenance')->dailyAt('08:00');
+        $schedule->command('motorpool:send-maintenance-notifications')->everyFiveMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

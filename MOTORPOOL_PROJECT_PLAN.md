@@ -129,8 +129,6 @@ Key sections:
 - `app/Services`
   - `Maintenance/NextMaintenanceCalculator.php`
   - `Notifications/MaintenanceNotifier.php`
-  - `Notifications/SmsGateway.php` (interface)
-  - `Notifications/TwilioSmsGateway.php` (implementation)
 - `app/Notifications`
   - `MaintenanceDueNotification.php`
   - `MileageThresholdNotification.php`
@@ -169,7 +167,7 @@ Key sections:
    - Fields: name, description, quantity, unit, unit cost, total cost.
 
 5. **Notifications & Alerts**
-   - Automatic email/SMS notifications when maintenance is due by time or mileage.
+   - Automatic email notifications when maintenance is due by time or mileage.
    - Logging of all sent notifications.
 
 6. **Trip Tickets** (later phase)
@@ -338,11 +336,7 @@ Key sections:
 
 ### 7.3. Notification Channels
 
-- **Email**: standard Laravel notifications.
-- **SMS**:
-  - `SmsGateway` interface.
-  - `TwilioSmsGateway` implementation using Twilio REST API.
-  - Notification classes call the gateway via the service container.
+- **Email**: standard Laravel notifications via `MaintenanceDueNotification`.
 
 ---
 

@@ -154,7 +154,7 @@
                         @forelse ($logs as $log)
                             <tr>
                                 <td class="px-3 py-3 whitespace-nowrap text-gray-700">
-                                    {{ $log->sent_at?->format('M d, Y H:i') ?? '—' }}
+                                    {{ $log->sent_at?->format('M d, Y h:i A') ?? '—' }}
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap text-gray-900">
                                     {{ $log->vehicle?->plate_number ?? '—' }}

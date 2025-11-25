@@ -23,6 +23,7 @@ class Index extends Component
     public ?string $search = null;
 
     public bool $showModal = false;
+    public ?int $editingId = null;
 
     public ?int $vehicle_id = null;
     public ?string $driver_name = null;
@@ -70,6 +71,24 @@ class Index extends Component
         $this->showModal = true;
     }
 
+    public function edit(int $id): void
+    {
+        $ticket = TripTicket::findOrFail($id);
+
+        $this->editingId = $ticket->id;
+        $this->vehicle_id = $ticket->vehicle_id;
+        $this->driver_name = $ticket->driver_name;
+        $this->destination = $ticket->destination;
+        $this->purpose = $ticket->purpose;
+        $this->departure_at = $ticket->departure_at?->format('Y-m-d\TH:i');
+        $this->return_at = $ticket->return_at?->format('Y-m-d\TH:i');
+        $this->odometer_start = $ticket->odometer_start;
+        $this->odometer_end = $ticket->odometer_end;
+        $this->form_status = $ticket->status;
+
+        $this->showModal = true;
+    }
+
     public function save(): void
     {
         $this->validate();
@@ -77,9 +96,8 @@ class Index extends Component
         $departureAt = Carbon::parse($this->departure_at);
         $returnAt = $this->return_at ? Carbon::parse($this->return_at) : null;
 
-        TripTicket::create([
+        $data = [
             'vehicle_id' => $this->vehicle_id,
-            'requested_by_user_id' => Auth::id(),
             'driver_name' => $this->driver_name ?? '',
             'destination' => $this->destination ?? '',
             'purpose' => $this->purpose ?? '',
@@ -88,8 +106,21 @@ class Index extends Component
             'odometer_start' => $this->odometer_start,
             'odometer_end' => $this->odometer_end,
             'status' => $this->form_status,
-            'notes' => null,
-        ]);
+        ];
+
+        if ($this->editingId) {
+            $ticket = TripTicket::findOrFail($this->editingId);
+            $ticket->update($data);
+
+            session()->flash('success', __('Trip ticket updated successfully.'));
+        } else {
+            TripTicket::create(array_merge($data, [
+                'requested_by_user_id' => Auth::id(),
+                'notes' => null,
+            ]));
+
+            session()->flash('success', __('Trip ticket created successfully.'));
+        }
 
         $this->resetForm();
         $this->showModal = false;
@@ -98,6 +129,7 @@ class Index extends Component
 
     private function resetForm(): void
     {
+        $this->editingId = null;
         $this->vehicle_id = null;
         $this->driver_name = null;
         $this->destination = null;

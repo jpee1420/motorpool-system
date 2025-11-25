@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Notifications;
 
+use App\Jobs\SendMaintenanceNotificationJob;
 use App\Models\NotificationLog;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
@@ -71,6 +72,30 @@ class Index extends Component
         return view('livewire.notifications.index', [
             'logs' => $this->getLogs(),
         ]);
+    }
+
+    public function retry(int $id): void
+    {
+        $log = NotificationLog::find($id);
+
+        if ($log === null) {
+            session()->flash('error', __('Notification log not found.'));
+            return;
+        }
+
+        if ($log->status === 'sent') {
+            session()->flash('error', __('This notification has already been sent.'));
+            return;
+        }
+
+        $log->update([
+            'status' => 'pending',
+            'error_message' => null,
+        ]);
+
+        SendMaintenanceNotificationJob::dispatch($log->id);
+
+        session()->flash('success', __('Notification has been queued for retry.'));
     }
 
     private function getLogs(): LengthAwarePaginator

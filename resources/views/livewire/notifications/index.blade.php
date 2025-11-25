@@ -1,5 +1,34 @@
 <div class="py-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        @if (session()->has('success'))
+            <div class="rounded-lg bg-green-50 p-4 border border-green-200">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if (session()->has('error'))
+            <div class="rounded-lg bg-red-50 p-4 border border-red-200">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-red-800">{{ session('error') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">
@@ -116,6 +145,9 @@
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                 {{ __('Error') }}
                             </th>
+                            <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                                {{ __('Actions') }}
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200 bg-white">
@@ -161,10 +193,26 @@
                                         —
                                     @endif
                                 </td>
+                                <td class="px-3 py-3 whitespace-nowrap text-right">
+                                    @if ($log->status === 'failed' || $log->status === 'pending')
+                                        <button
+                                            type="button"
+                                            wire:click="retry({{ $log->id }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="retry({{ $log->id }})"
+                                            class="text-xs font-medium text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
+                                        >
+                                            <span wire:loading.remove wire:target="retry({{ $log->id }})">{{ __('Retry') }}</span>
+                                            <span wire:loading wire:target="retry({{ $log->id }})">{{ __('Retrying...') }}</span>
+                                        </button>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-3 py-6 text-center text-gray-500">
+                                <td colspan="8" class="px-3 py-6 text-center text-gray-500">
                                     {{ __('No notifications found for the selected filters.') }}
                                 </td>
                             </tr>

@@ -9,10 +9,12 @@ use App\Models\MaintenanceRecord;
 use App\Models\Vehicle;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
 {
@@ -111,7 +113,7 @@ class Index extends Component
 
         $record = MaintenanceRecord::create([
             'vehicle_id' => $this->vehicle_id,
-            'performed_by_user_id' => auth()->id(),
+            'performed_by_user_id' => Auth::id(),
             'performed_at' => $performedAt,
             'odometer_reading' => $this->odometer_reading,
             'description_of_work' => $this->description_of_work,
@@ -156,6 +158,8 @@ class Index extends Component
         $this->resetForm();
         $this->showModal = false;
         $this->resetPage();
+
+        session()->flash('success', __('Maintenance record created successfully.'));
     }
 
     private function resetForm(): void
@@ -169,6 +173,65 @@ class Index extends Component
         $this->next_maintenance_due_odometer = null;
         $this->materials = [];
         $this->addMaterialRow();
+    }
+
+    public function exportCsv(): StreamedResponse
+    {
+        $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
+            ->when($this->vehicleFilter, function ($query): void {
+                $query->where('vehicle_id', $this->vehicleFilter);
+            })
+            ->orderByDesc('performed_at')
+            ->get();
+
+        $filename = 'maintenance_records_' . now()->format('Y-m-d_His') . '.csv';
+
+        return response()->streamDownload(function () use ($records): void {
+            $handle = fopen('php://output', 'w');
+
+            // CSV Headers
+            fputcsv($handle, [
+                'ID',
+                'Vehicle',
+                'Performed At',
+                'Performed By',
+                'Odometer Reading',
+                'Description',
+                'Labor Cost',
+                'Materials Cost',
+                'Total Cost',
+                'Next Due Date',
+                'Next Due Odometer',
+                'Materials Used',
+            ]);
+
+            // CSV Data
+            foreach ($records as $record) {
+                $materialsText = $record->materials->map(function ($m) {
+                    return $m->name . ' (' . $m->quantity . ' ' . $m->unit . ')';
+                })->implode('; ');
+
+                fputcsv($handle, [
+                    $record->id,
+                    $record->vehicle?->plate_number ?? '',
+                    $record->performed_at?->format('Y-m-d H:i'),
+                    $record->performedBy?->name ?? '',
+                    $record->odometer_reading,
+                    $record->description_of_work,
+                    $record->personnel_labor_cost,
+                    $record->materials_cost_total,
+                    $record->total_cost,
+                    $record->next_maintenance_due_at?->format('Y-m-d'),
+                    $record->next_maintenance_due_odometer,
+                    $materialsText,
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     private function getRecords(): LengthAwarePaginator

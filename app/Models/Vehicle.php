@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property \Illuminate\Support\Carbon|null $last_maintenance_at
+ * @property \Illuminate\Support\Carbon|null $next_maintenance_due_at
+ */
 class Vehicle extends Model
 {
     use HasFactory;

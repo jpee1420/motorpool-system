@@ -1,5 +1,19 @@
 <div class="py-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        @if (session()->has('success'))
+            <div class="rounded-lg bg-green-50 p-4 border border-green-200">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-green-800">{{ session('success') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">
@@ -23,13 +37,30 @@
                     </select>
                 </div>
 
-                <button
-                    type="button"
-                    wire:click="openCreateModal"
-                    class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-                >
-                    {{ __('Add maintenance record') }}
-                </button>
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        wire:click="exportCsv"
+                        wire:loading.attr="disabled"
+                        wire:target="exportCsv"
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span wire:loading.remove wire:target="exportCsv">{{ __('Export CSV') }}</span>
+                        <span wire:loading wire:target="exportCsv">{{ __('Exporting...') }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="openCreateModal"
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
+                    >
+                        {{ __('Add maintenance record') }}
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -132,7 +163,7 @@
                                 {{ __('Vehicle') }}
                             </label>
                             <select
-                                wire:model.defer="vehicle_id"
+                                wire:model="vehicle_id"
                                 class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                                 <option value="">{{ __('Select vehicle') }}</option>
@@ -151,7 +182,7 @@
                             </label>
                             <input
                                 type="date"
-                                wire:model.defer="performed_at"
+                                wire:model="performed_at"
                                 class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('performed_at')
@@ -165,7 +196,7 @@
                             </label>
                             <input
                                 type="number"
-                                wire:model.defer="odometer_reading"
+                                wire:model="odometer_reading"
                                 class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('odometer_reading')
@@ -180,7 +211,7 @@
                             <input
                                 type="number"
                                 step="0.01"
-                                wire:model.defer="personnel_labor_cost"
+                                wire:model="personnel_labor_cost"
                                 class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('personnel_labor_cost')
@@ -194,7 +225,7 @@
                             </label>
                             <input
                                 type="date"
-                                wire:model.defer="next_maintenance_due_at"
+                                wire:model="next_maintenance_due_at"
                                 class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('next_maintenance_due_at')
@@ -208,7 +239,7 @@
                             </label>
                             <input
                                 type="number"
-                                wire:model.defer="next_maintenance_due_odometer"
+                                wire:model="next_maintenance_due_odometer"
                                 class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('next_maintenance_due_odometer')
@@ -221,7 +252,7 @@
                                 {{ __('Description of work done') }}
                             </label>
                             <textarea
-                                wire:model.defer="description_of_work"
+                                wire:model="description_of_work"
                                 rows="3"
                                 class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             ></textarea>
@@ -251,7 +282,7 @@
                                     <div class="sm:col-span-2">
                                         <input
                                             type="text"
-                                            wire:model.defer="materials.{{ $index }}.name"
+                                            wire:model="materials.{{ $index }}.name"
                                             placeholder="{{ __('Material name') }}"
                                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
@@ -259,7 +290,7 @@
                                     <div>
                                         <input
                                             type="text"
-                                            wire:model.defer="materials.{{ $index }}.unit"
+                                            wire:model="materials.{{ $index }}.unit"
                                             placeholder="{{ __('Unit') }}"
                                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
@@ -268,7 +299,7 @@
                                         <input
                                             type="number"
                                             step="0.01"
-                                            wire:model.defer="materials.{{ $index }}.quantity"
+                                            wire:model="materials.{{ $index }}.quantity"
                                             placeholder="{{ __('Qty') }}"
                                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
@@ -277,7 +308,7 @@
                                         <input
                                             type="number"
                                             step="0.01"
-                                            wire:model.defer="materials.{{ $index }}.unit_cost"
+                                            wire:model="materials.{{ $index }}.unit_cost"
                                             placeholder="{{ __('Unit cost') }}"
                                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
@@ -305,9 +336,16 @@
 
                         <button
                             type="submit"
-                            class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+                            wire:loading.attr="disabled"
+                            wire:target="save"
+                            class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
                         >
-                            {{ __('Save maintenance record') }}
+                            <span wire:loading.remove wire:target="save">
+                                {{ __('Save maintenance record') }}
+                            </span>
+                            <span wire:loading wire:target="save">
+                                {{ __('Saving...') }}
+                            </span>
                         </button>
                     </div>
                 </form>

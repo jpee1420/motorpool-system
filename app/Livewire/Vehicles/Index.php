@@ -12,6 +12,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
 {
@@ -138,6 +139,8 @@ class Index extends Component
             }
 
             $vehicle->update($data);
+
+            session()->flash('success', __('Vehicle updated successfully.'));
         } else {
             Vehicle::create([
                 'vehicle_type' => $this->vehicle_type,
@@ -152,6 +155,8 @@ class Index extends Component
                 'status' => $this->status,
                 'photo_path' => $photoPath,
             ]);
+
+            session()->flash('success', __('Vehicle created successfully.'));
         }
 
         $this->resetForm();
@@ -172,6 +177,72 @@ class Index extends Component
         $this->contact_number = '';
         $this->status = 'operational';
         $this->photo = null;
+    }
+
+    public function exportCsv(): StreamedResponse
+    {
+        $vehicles = Vehicle::query()
+            ->when($this->search !== '', function ($query): void {
+                $query->where(function ($sub): void {
+                    $sub->where('plate_number', 'like', "%{$this->search}%")
+                        ->orWhere('make', 'like', "%{$this->search}%")
+                        ->orWhere('model', 'like', "%{$this->search}%");
+                });
+            })
+            ->when($this->statusFilter !== '', function ($query): void {
+                $query->where('status', $this->statusFilter);
+            })
+            ->orderBy('plate_number')
+            ->get();
+
+        $filename = 'vehicles_' . now()->format('Y-m-d_His') . '.csv';
+
+        return response()->streamDownload(function () use ($vehicles): void {
+            $handle = fopen('php://output', 'w');
+
+            // CSV Headers
+            fputcsv($handle, [
+                'ID',
+                'Plate Number',
+                'Vehicle Type',
+                'Make',
+                'Model',
+                'Year',
+                'Chassis Number',
+                'Engine Number',
+                'Driver/Operator',
+                'Contact Number',
+                'Status',
+                'Current Odometer',
+                'Next Maintenance Due',
+                'Next Maintenance Odometer',
+            ]);
+
+            // CSV Data
+            foreach ($vehicles as $vehicle) {
+                fputcsv($handle, [
+                    $vehicle->id,
+                    $vehicle->plate_number,
+                    $vehicle->vehicle_type,
+                    $vehicle->make,
+                    $vehicle->model,
+                    $vehicle->year,
+                    $vehicle->chassis_number,
+                    $vehicle->engine_number,
+                    $vehicle->driver_operator,
+                    $vehicle->contact_number,
+                    $vehicle->status,
+                    $vehicle->current_odometer,
+                    $vehicle->next_maintenance_due_at?->format('Y-m-d'),
+                    $vehicle->next_maintenance_due_odometer,
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     private function getVehicles(): LengthAwarePaginator

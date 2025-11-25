@@ -10,7 +10,6 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Carbon;
 
 class MaintenanceDueNotification extends Notification implements ShouldQueue
 {
@@ -39,20 +38,16 @@ class MaintenanceDueNotification extends Notification implements ShouldQueue
         $mailMessage->line('Vehicle: '.$plate);
 
         if ($vehicle !== null) {
-            // if ($vehicle->next_maintenance_due_at !== null) {
-            //     $mailMessage->line('Due by date: '.$vehicle->next_maintenance_due_at->format('M d, Y'));
-            // }
-            if ($vehicle->next_maintenance_due_at instanceof \DateTime) {
-                $mailMessage->line(
-                'Due by date: ' . $vehicle->next_maintenance_due_at->format('M d, Y')
-                );
+            if ($vehicle->next_maintenance_due_at !== null) {
+                $mailMessage->line('Due by date: '.$vehicle->next_maintenance_due_at->format('M d, Y'));
             }
+
             if ($vehicle->next_maintenance_due_odometer !== null) {
-                $mailMessage->line('Due at odometer: '.$vehicle->next_maintenance_due_odometer.' km');
+                $mailMessage->line('Due at odometer: '.number_format($vehicle->next_maintenance_due_odometer).' km');
             }
 
             if ($vehicle->current_odometer !== null) {
-                $mailMessage->line('Current odometer: '.$vehicle->current_odometer.' km');
+                $mailMessage->line('Current odometer: '.number_format($vehicle->current_odometer).' km');
             }
         }
 

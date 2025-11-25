@@ -7,6 +7,7 @@ use App\Livewire\Maintenance\Index as MaintenanceIndex;
 use App\Livewire\Maintenance\Show as MaintenanceShow;
 use App\Livewire\Notifications\Index as NotificationsIndex;
 use App\Livewire\TripTickets\Index as TripTicketsIndex;
+use App\Livewire\TripTickets\Show as TripTicketsShow;
 use App\Livewire\Vehicles\Index as VehiclesIndex;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
@@ -47,6 +48,10 @@ Route::get('calendar', CalendarIndex::class)
 Route::get('trip-tickets', TripTicketsIndex::class)
     ->middleware(['auth'])
     ->name('trip-tickets.index');
+
+Route::get('trip-tickets/{ticket}', TripTicketsShow::class)
+    ->middleware(['auth'])
+    ->name('trip-tickets.show');
 
 Route::get('account/users', AccountUsersIndex::class)
     ->middleware(['auth'])

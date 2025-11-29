@@ -26,39 +26,39 @@ Route::get('dashboard', DashboardController::class)
     ->name('dashboard');
 
 Route::get('vehicles', VehiclesIndex::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('vehicles.index');
 
 Route::get('maintenance', MaintenanceIndex::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('maintenance.index');
 
 Route::get('maintenance/{record}', MaintenanceShow::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('maintenance.show');
 
 Route::get('notifications', NotificationsIndex::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('notifications.index');
 
 Route::get('calendar', CalendarIndex::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('calendar.index');
 
 Route::get('trip-tickets', TripTicketsIndex::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('trip-tickets.index');
 
 Route::get('trip-tickets/{ticket}', TripTicketsShow::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('trip-tickets.show');
 
 Route::get('account/users', AccountUsersIndex::class)
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('account.users');
 
 Route::view('profile', 'profile')
-    ->middleware(['auth'])
+    ->middleware(['auth', 'verified'])
     ->name('profile');
 
 require __DIR__.'/auth.php';

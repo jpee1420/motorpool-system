@@ -136,22 +136,19 @@
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider" style="width: 30%">
                                 {{ __('Name') }}
                             </th>
-                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Description') }}
+                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider" style="width: 25%">
+                                {{ __('Part number') }}
                             </th>
-                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider" style="width: 10%">
                                 {{ __('Quantity') }}
                             </th>
-                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Unit') }}
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider" style="width: 15%">
+                                {{ __('Cost') }}
                             </th>
-                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Unit cost') }}
-                            </th>
-                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider" style="width: 20%">
                                 {{ __('Total cost') }}
                             </th>
                         </tr>
@@ -163,13 +160,10 @@
                                     {{ $material->name }}
                                 </td>
                                 <td class="px-3 py-2 whitespace-nowrap text-gray-700">
-                                    {{ $material->description ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
-                                    {{ $material->quantity }}
-                                </td>
-                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
                                     {{ $material->unit ?? '—' }}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
+                                    {{ $material->quantity === null ? '—' : rtrim(rtrim((string) $material->quantity, '0'), '.') }}
                                 </td>
                                 <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
                                     ₱{{ number_format($material->unit_cost, 2) }}
@@ -180,7 +174,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-3 py-4 text-center text-gray-500">
+                                <td colspan="5" class="px-3 py-4 text-center text-gray-500">
                                     {{ __('No materials recorded for this maintenance.') }}
                                 </td>
                             </tr>

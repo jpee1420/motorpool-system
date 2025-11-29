@@ -6,9 +6,11 @@ namespace App\Livewire\Vehicles;
 
 use App\Models\Vehicle;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -16,6 +18,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
 {
+    use AuthorizesRequests;
     use WithFileUploads;
     use WithPagination;
 
@@ -24,6 +27,7 @@ class Index extends Component
 
     public bool $showModal = false;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public string $vehicle_type = '';
@@ -57,8 +61,13 @@ class Index extends Component
             'driver_operator' => ['nullable', 'string', 'max:255'],
             'contact_number' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'string', 'in:operational,non-operational,maintenance'],
-            'photo' => ['nullable', 'image', 'max:2048'],
+            'photo' => ['nullable', 'image', 'max:2048', 'mimes:jpg,jpeg,png,webp'],
         ];
+    }
+
+    public function mount(): void
+    {
+        $this->authorize('viewAny', Vehicle::class);
     }
 
     #[Layout('layouts.app')]
@@ -68,6 +77,8 @@ class Index extends Component
 
         return view('livewire.vehicles.index', [
             'vehicles' => $vehicles,
+            'canCreate' => auth()->user()?->can('create', Vehicle::class) ?? false,
+            'canExport' => auth()->user()?->can('export', Vehicle::class) ?? false,
         ]);
     }
 
@@ -83,6 +94,8 @@ class Index extends Component
 
     public function openCreateModal(): void
     {
+        $this->authorize('create', Vehicle::class);
+
         $this->resetForm();
         $this->editingId = null;
         $this->showModal = true;
@@ -91,6 +104,8 @@ class Index extends Component
     public function edit(int $vehicleId): void
     {
         $vehicle = Vehicle::findOrFail($vehicleId);
+
+        $this->authorize('update', $vehicle);
 
         $this->editingId = $vehicle->id;
         $this->vehicle_type = (string) $vehicle->vehicle_type;
@@ -110,6 +125,13 @@ class Index extends Component
 
     public function save(): void
     {
+        if ($this->editingId) {
+            $vehicle = Vehicle::findOrFail($this->editingId);
+            $this->authorize('update', $vehicle);
+        } else {
+            $this->authorize('create', Vehicle::class);
+        }
+
         $this->validate();
 
         $photoPath = null;
@@ -181,6 +203,8 @@ class Index extends Component
 
     public function exportCsv(): StreamedResponse
     {
+        $this->authorize('export', Vehicle::class);
+
         $vehicles = Vehicle::query()
             ->when($this->search !== '', function ($query): void {
                 $query->where(function ($sub): void {

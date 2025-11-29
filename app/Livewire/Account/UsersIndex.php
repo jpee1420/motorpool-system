@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Account;
 
 use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
@@ -13,6 +14,7 @@ use Livewire\WithPagination;
 
 class UsersIndex extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     public ?string $search = null;
@@ -31,11 +33,7 @@ class UsersIndex extends Component
 
     public function mount(): void
     {
-        $user = Auth::user();
-
-        if ($user === null || $user->role !== 'admin') {
-            abort(403);
-        }
+        $this->authorize('viewAny', User::class);
     }
 
     public function updatingSearch(): void
@@ -55,17 +53,16 @@ class UsersIndex extends Component
 
     public function setRole(int $userId, string $role): void
     {
-        if (! in_array($role, ['admin', 'staff', 'user'], true)) {
+        $this->authorize('manage', User::class);
+
+        if (! in_array($role, [User::ROLE_ADMIN, User::ROLE_STAFF, User::ROLE_USER], true)) {
             return;
         }
 
         $currentUser = Auth::user();
 
-        if ($currentUser === null || $currentUser->role !== 'admin') {
-            abort(403);
-        }
-
-        if ($currentUser->id === $userId && $role !== 'admin') {
+        // Prevent admin from demoting themselves
+        if ($currentUser?->id === $userId && $role !== User::ROLE_ADMIN) {
             return;
         }
 
@@ -80,13 +77,12 @@ class UsersIndex extends Component
 
     public function toggleStatus(int $userId): void
     {
+        $this->authorize('manage', User::class);
+
         $currentUser = Auth::user();
 
-        if ($currentUser === null || $currentUser->role !== 'admin') {
-            abort(403);
-        }
-
-        if ($currentUser->id === $userId) {
+        // Prevent admin from disabling themselves
+        if ($currentUser?->id === $userId) {
             return;
         }
 
@@ -97,7 +93,7 @@ class UsersIndex extends Component
         }
 
         $user->update([
-            'status' => $user->status === 'active' ? 'disabled' : 'active',
+            'status' => $user->status === User::STATUS_ACTIVE ? User::STATUS_DISABLED : User::STATUS_ACTIVE,
         ]);
     }
 

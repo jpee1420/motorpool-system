@@ -193,8 +193,8 @@
     </div>
 
     @if ($showModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div class="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 overflow-y-auto">
+            <div class="w-full max-w-2xl rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                     <h2 class="text-lg font-semibold text-gray-900">
                         {{ $editingId ? __('Edit vehicle') : __('Add vehicle') }}
@@ -340,7 +340,7 @@
                             @enderror
                         </div>
 
-                        <div class="sm:col-span-2">
+                        <div>
                             <label class="block text-sm font-medium text-gray-700">
                                 {{ __('Photo (optional)') }}
                             </label>

@@ -4,20 +4,28 @@ declare(strict_types=1);
 
 namespace App\Livewire\Maintenance;
 
+use App\Exports\MaintenanceRecordsExport;
 use App\Models\MaintenanceMaterial;
 use App\Models\MaintenanceRecord;
 use App\Models\Vehicle;
+use App\Services\Maintenance\NextMaintenanceCalculator;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     public ?int $vehicleFilter = null;
@@ -53,15 +61,22 @@ class Index extends Component
         ];
     }
 
+    public function mount(): void
+    {
+        $this->authorize('viewAny', MaintenanceRecord::class);
+    }
+
     #[Layout('layouts.app')]
     public function render(): View
     {
         $records = $this->getRecords();
-        $vehicles = Vehicle::orderBy('plate_number')->get();
+        $vehicles = Vehicle::query()->orderBy('plate_number')->get();
 
         return view('livewire.maintenance.index', [
             'records' => $records,
             'vehicles' => $vehicles,
+            'canCreate' => auth()->user()?->can('create', MaintenanceRecord::class) ?? false,
+            'canExport' => auth()->user()?->can('export', MaintenanceRecord::class) ?? false,
         ]);
     }
 
@@ -72,6 +87,8 @@ class Index extends Component
 
     public function openCreateModal(): void
     {
+        $this->authorize('create', MaintenanceRecord::class);
+
         $this->resetForm();
         $this->showModal = true;
     }
@@ -95,6 +112,8 @@ class Index extends Component
 
     public function save(): void
     {
+        $this->authorize('create', MaintenanceRecord::class);
+
         $this->validate();
 
         $performedAt = $this->performed_at
@@ -111,6 +130,15 @@ class Index extends Component
 
         $totalCost = $this->personnel_labor_cost + $materialsCostTotal;
 
+        // Use the NextMaintenanceCalculator service to compute next due values
+        $calculator = app(NextMaintenanceCalculator::class);
+
+        $nextDueAt = $calculator->calculateNextDueDate($this->next_maintenance_due_at, $performedAt);
+        $nextDueOdometer = $calculator->calculateNextDueOdometer(
+            $this->next_maintenance_due_odometer,
+            $this->odometer_reading
+        );
+
         $record = MaintenanceRecord::create([
             'vehicle_id' => $this->vehicle_id,
             'performed_by_user_id' => Auth::id(),
@@ -120,20 +148,19 @@ class Index extends Component
             'personnel_labor_cost' => $this->personnel_labor_cost,
             'materials_cost_total' => $materialsCostTotal,
             'total_cost' => $totalCost,
-            'next_maintenance_due_at' => $this->next_maintenance_due_at,
-            'next_maintenance_due_odometer' => $this->next_maintenance_due_odometer,
+            'next_maintenance_due_at' => $nextDueAt,
+            'next_maintenance_due_odometer' => $nextDueOdometer,
         ]);
 
         $vehicle = Vehicle::find($this->vehicle_id);
 
         if ($vehicle !== null) {
-            $vehicle->update([
-                'current_odometer' => $this->odometer_reading,
-                'last_maintenance_at' => $performedAt,
-                'last_maintenance_odometer' => $this->odometer_reading,
-                'next_maintenance_due_at' => $this->next_maintenance_due_at ?? $vehicle->next_maintenance_due_at,
-                'next_maintenance_due_odometer' => $this->next_maintenance_due_odometer ?? $vehicle->next_maintenance_due_odometer,
-            ]);
+            $calculator->updateVehicleAfterMaintenance(
+                $vehicle,
+                $record,
+                $this->next_maintenance_due_at,
+                $this->next_maintenance_due_odometer
+            );
         }
 
         foreach ($this->materials as $material) {
@@ -177,6 +204,8 @@ class Index extends Component
 
     public function exportCsv(): StreamedResponse
     {
+        $this->authorize('export', MaintenanceRecord::class);
+
         $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
@@ -232,6 +261,42 @@ class Index extends Component
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
+    }
+
+    public function exportPdf(): Response
+    {
+        $this->authorize('export', MaintenanceRecord::class);
+
+        $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
+            ->when($this->vehicleFilter, function ($query): void {
+                $query->where('vehicle_id', $this->vehicleFilter);
+            })
+            ->orderByDesc('performed_at')
+            ->get();
+
+        $filename = 'maintenance_records_' . now()->format('Y-m-d_His') . '.pdf';
+
+        $pdf = Pdf::loadView('exports.maintenance-records-pdf', [
+            'records' => $records,
+        ]);
+
+        return $pdf->download($filename);
+    }
+
+    public function exportExcel(): BinaryFileResponse
+    {
+        $this->authorize('export', MaintenanceRecord::class);
+
+        $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
+            ->when($this->vehicleFilter, function ($query): void {
+                $query->where('vehicle_id', $this->vehicleFilter);
+            })
+            ->orderByDesc('performed_at')
+            ->get();
+
+        $filename = 'maintenance_records_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(new MaintenanceRecordsExport($records), $filename);
     }
 
     private function getRecords(): LengthAwarePaginator

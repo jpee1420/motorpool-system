@@ -7,15 +7,18 @@ namespace App\Livewire\TripTickets;
 use App\Models\TripTicket;
 use App\Models\Vehicle;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class Index extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     public ?int $vehicleFilter = null;
@@ -23,6 +26,8 @@ class Index extends Component
     public ?string $search = null;
 
     public bool $showModal = false;
+
+    #[Locked]
     public ?int $editingId = null;
 
     public ?int $vehicle_id = null;
@@ -67,6 +72,8 @@ class Index extends Component
 
     public function openCreateModal(): void
     {
+        $this->authorize('create', TripTicket::class);
+
         $this->resetForm();
         $this->showModal = true;
     }
@@ -74,6 +81,8 @@ class Index extends Component
     public function edit(int $id): void
     {
         $ticket = TripTicket::findOrFail($id);
+
+        $this->authorize('update', $ticket);
 
         $this->editingId = $ticket->id;
         $this->vehicle_id = $ticket->vehicle_id;
@@ -91,6 +100,13 @@ class Index extends Component
 
     public function save(): void
     {
+        if ($this->editingId) {
+            $ticket = TripTicket::findOrFail($this->editingId);
+            $this->authorize('update', $ticket);
+        } else {
+            $this->authorize('create', TripTicket::class);
+        }
+
         $this->validate();
 
         $departureAt = Carbon::parse($this->departure_at);
@@ -141,12 +157,18 @@ class Index extends Component
         $this->form_status = 'pending';
     }
 
+    public function mount(): void
+    {
+        $this->authorize('viewAny', TripTicket::class);
+    }
+
     #[Layout('layouts.app')]
     public function render(): View
     {
         return view('livewire.trip-tickets.index', [
             'tickets' => $this->getTickets(),
             'vehicles' => Vehicle::orderBy('plate_number')->get(),
+            'canCreate' => auth()->user()?->can('create', TripTicket::class) ?? false,
         ]);
     }
 

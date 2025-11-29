@@ -37,7 +37,7 @@
                     </select>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2 sm:justify-end">
                     <button
                         type="button"
                         wire:click="exportCsv"
@@ -48,15 +48,43 @@
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span wire:loading.remove wire:target="exportCsv">{{ __('Export CSV') }}</span>
-                        <span wire:loading wire:target="exportCsv">{{ __('Exporting...') }}</span>
+                        <span wire:loading.remove wire:target="exportCsv">{{ __('CSV') }}</span>
+                        <span wire:loading wire:target="exportCsv">{{ __('...') }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="exportPdf"
+                        wire:loading.attr="disabled"
+                        wire:target="exportPdf"
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span wire:loading.remove wire:target="exportPdf">{{ __('PDF') }}</span>
+                        <span wire:loading wire:target="exportPdf">{{ __('...') }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="exportExcel"
+                        wire:loading.attr="disabled"
+                        wire:target="exportExcel"
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span wire:loading.remove wire:target="exportExcel">{{ __('Excel') }}</span>
+                        <span wire:loading wire:target="exportExcel">{{ __('...') }}</span>
                     </button>
 
                     <button
                         type="button"
                         wire:click="openCreateModal"
                         wire:loading.attr="disabled"
-                        class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
+                        class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 w-full sm:w-auto sm:ml-2"
                     >
                         {{ __('Add maintenance record') }}
                     </button>
@@ -140,8 +168,8 @@
     </div>
 
     @if ($showModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div class="w-full max-w-3xl rounded-xl bg-white shadow-xl">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6 overflow-y-auto">
+            <div class="w-full max-w-3xl rounded-xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
                 <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
                     <h2 class="text-lg font-semibold text-gray-900">
                         {{ __('Add maintenance record') }}
@@ -278,8 +306,8 @@
 
                         <div class="space-y-2">
                             @foreach ($materials as $index => $material)
-                                <div class="grid gap-3 sm:grid-cols-5 rounded-lg border border-gray-200 p-3">
-                                    <div class="sm:col-span-2">
+                                <div class="grid gap-3 sm:grid-cols-12 rounded-lg border border-gray-200 p-3">
+                                    <div class="sm:col-span-4">
                                         <input
                                             type="text"
                                             wire:model="materials.{{ $index }}.name"
@@ -287,15 +315,15 @@
                                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
                                     </div>
-                                    <div>
+                                    <div class="sm:col-span-3">
                                         <input
                                             type="text"
                                             wire:model="materials.{{ $index }}.unit"
-                                            placeholder="{{ __('Unit') }}"
+                                            placeholder="{{ __('Part number') }}"
                                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
                                     </div>
-                                    <div>
+                                    <div class="sm:col-span-2">
                                         <input
                                             type="number"
                                             step="0.01"
@@ -304,12 +332,12 @@
                                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
                                     </div>
-                                    <div class="flex items-center gap-2">
+                                    <div class="sm:col-span-3 flex gap-2">
                                         <input
                                             type="number"
                                             step="0.01"
                                             wire:model="materials.{{ $index }}.unit_cost"
-                                            placeholder="{{ __('Unit cost') }}"
+                                            placeholder="{{ __('Cost') }}"
                                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
                                         <button

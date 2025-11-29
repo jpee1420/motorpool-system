@@ -2,7 +2,7 @@
 
 ## 1. Vision & Goals
 
-- **Modernize stack**: Migrate the existing Flutter + Firebase motorpool system to a Laravel 11 + Livewire 3 + Alpine.js web app.
+- **Modernize stack**: Build and maintain the motorpool system on Laravel 11 + Livewire 3 + Alpine.js.
 - **Centralized, online system**: Primary deployment is cloud-hosted (DigitalOcean), accessed via browser from multiple PCs.
 - **Offline tolerance (PC → cloud)**: Allow data entry on a local server and sync to cloud when online (later phase).
 - **Maintenance intelligence**: Track vehicles, maintenance history, and notify users by email/SMS when:
@@ -383,14 +383,14 @@ Key sections:
 
 ---
 
-## 9. Migration Strategy from Flutter + Firebase
+## 9. Data Migration Strategy (Optional)
 
 1. **Schema Mapping**
-   - Map Firestore collections (vehicles, maintenance, users) to the new MySQL schema.
+   - Map any legacy data sources (vehicles, maintenance, users) to the MySQL schema.
 2. **Data Export**
-   - Export Firestore collections as JSON/CSV.
+   - Export data from the legacy system as JSON/CSV if migration is required.
 3. **Import Scripts**
-   - Create Laravel console commands to import data into MySQL with proper foreign keys.
+   - Use or extend Laravel console commands to import data into MySQL with proper foreign keys.
 4. **Verification**
    - Spot-check records between old and new systems.
 5. **Cutover Plan**
@@ -422,7 +422,6 @@ Key sections:
    - Trip ticket module.
    - Advanced filtering, exports (PDF, Excel), and responsive layout.
 
-5. **Phase 5 – Data Migration & Go-Live**
-   - Firestore export/import.
-   - Production deployment to DigitalOcean.
+5. **Phase 5 – Go-Live & Production Hardening**
+   - Production deployment (Laravel Cloud / DigitalOcean).
    - Monitoring, logging, and optimization.

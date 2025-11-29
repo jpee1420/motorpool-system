@@ -142,9 +142,26 @@ php artisan test
 
 ---
 
+## Security
+
+This project implements several security measures:
+
+- **Authorization Policies** – `VehiclePolicy`, `MaintenanceRecordPolicy`, `TripTicketPolicy`, `UserPolicy`
+- **Role-based Access** – `admin`, `staff`, `user` roles with appropriate permissions
+- **Livewire Security** – `#[Locked]` attributes on sensitive IDs, server-side authorization
+- **Input Validation** – All Livewire components validate input before processing
+- **File Upload Protection** – Strict MIME type validation, random filenames, secure storage
+- **XSS Prevention** – All Blade output is escaped by default
+
+For the full security implementation plan and checklist, see:
+
+- [`SECURITY_PLAN.md`](SECURITY_PLAN.md)
+
+---
+
 ## Further Documentation
 
 For a deeper look at modules, database schema, and deployment strategy, see:
 
-- `MOTORPOOL_PROJECT_PLAN.md`
+- [`MOTORPOOL_PROJECT_PLAN.md`](MOTORPOOL_PROJECT_PLAN.md)
 

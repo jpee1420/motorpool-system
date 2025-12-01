@@ -15,6 +15,7 @@
                 ['label' => __('Dashboard'), 'route' => 'dashboard', 'pattern' => 'dashboard'],
                 ['label' => __('Vehicles'), 'route' => 'vehicles.index', 'pattern' => 'vehicles.*'],
                 ['label' => __('Maintenance'), 'route' => 'maintenance.index', 'pattern' => 'maintenance.*'],
+                ['label' => __('Repair'), 'route' => 'repair.index', 'pattern' => 'repair.*'],
                 ['label' => __('Notifications'), 'route' => 'notifications.index', 'pattern' => 'notifications.*'],
                 ['label' => __('Calendar'), 'route' => 'calendar.index', 'pattern' => 'calendar.*'],
                 ['label' => __('Trip tickets'), 'route' => 'trip-tickets.index', 'pattern' => 'trip-tickets.*'],

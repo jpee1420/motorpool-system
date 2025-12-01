@@ -17,7 +17,7 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">
-                    {{ __('Vehicles') }}
+                    {{ __('Vehicles/Equipments') }}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500">
                     {{ __('Manage your motorpool vehicles and their current status.') }}
@@ -353,7 +353,7 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                             <p class="mt-1 text-xs text-gray-500">
-                                {{ __('JPEG or PNG, up to 2MB.') }}
+                                {{ __('JPEG or PNG, up to 5MB.') }}
                             </p>
                         </div>
                     </div>

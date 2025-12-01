@@ -61,7 +61,7 @@ class Index extends Component
             'driver_operator' => ['nullable', 'string', 'max:255'],
             'contact_number' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'string', 'in:operational,non-operational,maintenance'],
-            'photo' => ['nullable', 'image', 'max:2048', 'mimes:jpg,jpeg,png,webp'],
+            'photo' => ['nullable', 'image', 'max:5120', 'mimes:jpg,jpeg,png,webp'],
         ];
     }
 

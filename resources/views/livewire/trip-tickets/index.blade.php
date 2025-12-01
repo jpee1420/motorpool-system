@@ -25,15 +25,61 @@
                 </p>
             </div>
 
-            <div>
-                <button
-                    type="button"
-                    wire:click="openCreateModal"
-                    wire:loading.attr="disabled"
-                    class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
-                >
-                    {{ __('Add trip ticket') }}
-                </button>
+            <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+                @if ($canExport)
+                    <button
+                        type="button"
+                        wire:click="exportCsv"
+                        wire:loading.attr="disabled"
+                        wire:target="exportCsv"
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span wire:loading.remove wire:target="exportCsv">{{ __('CSV') }}</span>
+                        <span wire:loading wire:target="exportCsv">{{ __('...') }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="exportPdf"
+                        wire:loading.attr="disabled"
+                        wire:target="exportPdf"
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span wire:loading.remove wire:target="exportPdf">{{ __('PDF') }}</span>
+                        <span wire:loading wire:target="exportPdf">{{ __('...') }}</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="exportExcel"
+                        wire:loading.attr="disabled"
+                        wire:target="exportExcel"
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span wire:loading.remove wire:target="exportExcel">{{ __('Excel') }}</span>
+                        <span wire:loading wire:target="exportExcel">{{ __('...') }}</span>
+                    </button>
+                @endif
+
+                @if ($canCreate)
+                    <button
+                        type="button"
+                        wire:click="openCreateModal"
+                        wire:loading.attr="disabled"
+                        class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 w-full sm:w-auto"
+                    >
+                        {{ __('Add trip ticket') }}
+                    </button>
+                @endif
             </div>
         </div>
 
@@ -250,34 +296,6 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700">
-                                {{ __('Departure at') }}
-                            </label>
-                            <input
-                                type="datetime-local"
-                                wire:model="departure_at"
-                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            >
-                            @error('departure_at')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">
-                                {{ __('Return at') }}
-                            </label>
-                            <input
-                                type="datetime-local"
-                                wire:model="return_at"
-                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            >
-                            @error('return_at')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">
                                 {{ __('Odometer start') }}
                             </label>
                             <input
@@ -304,21 +322,16 @@
                             @enderror
                         </div>
 
-                        <div>
+                        <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-gray-700">
-                                {{ __('Status') }}
+                                {{ __('Travel date') }}
                             </label>
-                            <select
-                                wire:model="form_status"
+                            <input
+                                type="date"
+                                wire:model="travel_date"
                                 class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
-                                <option value="pending">{{ __('Pending') }}</option>
-                                <option value="approved">{{ __('Approved') }}</option>
-                                <option value="ongoing">{{ __('Ongoing') }}</option>
-                                <option value="completed">{{ __('Completed') }}</option>
-                                <option value="cancelled">{{ __('Cancelled') }}</option>
-                            </select>
-                            @error('form_status')
+                            @error('travel_date')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>

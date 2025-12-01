@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire\Maintenance;
+namespace App\Livewire\Repair;
 
-use App\Exports\MaintenanceRecordsExport;
 use App\Models\MaintenanceMaterial;
 use App\Models\MaintenanceRecord;
 use App\Models\Vehicle;
-use App\Services\Maintenance\NextMaintenanceCalculator;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
@@ -18,9 +15,6 @@ use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
@@ -38,9 +32,6 @@ class Index extends Component
     public string $description_of_work = '';
     public float $personnel_labor_cost = 0.0;
 
-    public ?string $next_maintenance_due_at = null;
-    public ?int $next_maintenance_due_odometer = null;
-
     public array $materials = [];
 
     protected function rules(): array
@@ -51,8 +42,6 @@ class Index extends Component
             'odometer_reading' => ['required', 'integer'],
             'description_of_work' => ['required', 'string'],
             'personnel_labor_cost' => ['required', 'numeric', 'min:0'],
-            'next_maintenance_due_at' => ['nullable', 'date'],
-            'next_maintenance_due_odometer' => ['nullable', 'integer'],
             'materials.*.name' => ['nullable', 'string', 'max:255'],
             'materials.*.description' => ['nullable', 'string'],
             'materials.*.quantity' => ['nullable', 'numeric', 'min:0'],
@@ -72,7 +61,7 @@ class Index extends Component
         $records = $this->getRecords();
         $vehicles = Vehicle::query()->orderBy('plate_number')->get();
 
-        return view('livewire.maintenance.index', [
+        return view('livewire.repair.index', [
             'records' => $records,
             'vehicles' => $vehicles,
             'canCreate' => auth()->user()?->can('create', MaintenanceRecord::class) ?? false,
@@ -130,17 +119,8 @@ class Index extends Component
 
         $totalCost = $this->personnel_labor_cost + $materialsCostTotal;
 
-        // Use the NextMaintenanceCalculator service to compute next due values
-        $calculator = app(NextMaintenanceCalculator::class);
-
-        $nextDueAt = $calculator->calculateNextDueDate($this->next_maintenance_due_at, $performedAt);
-        $nextDueOdometer = $calculator->calculateNextDueOdometer(
-            $this->next_maintenance_due_odometer,
-            $this->odometer_reading
-        );
-
         $record = MaintenanceRecord::create([
-            'type' => MaintenanceRecord::TYPE_MAINTENANCE,
+            'type' => MaintenanceRecord::TYPE_REPAIR,
             'vehicle_id' => $this->vehicle_id,
             'performed_by_user_id' => Auth::id(),
             'performed_at' => $performedAt,
@@ -149,19 +129,15 @@ class Index extends Component
             'personnel_labor_cost' => $this->personnel_labor_cost,
             'materials_cost_total' => $materialsCostTotal,
             'total_cost' => $totalCost,
-            'next_maintenance_due_at' => $nextDueAt,
-            'next_maintenance_due_odometer' => $nextDueOdometer,
+            'next_maintenance_due_at' => null,
+            'next_maintenance_due_odometer' => null,
         ]);
 
+        // Update vehicle's current odometer if this repair reading is higher
         $vehicle = Vehicle::find($this->vehicle_id);
 
-        if ($vehicle !== null) {
-            $calculator->updateVehicleAfterMaintenance(
-                $vehicle,
-                $record,
-                $this->next_maintenance_due_at,
-                $this->next_maintenance_due_odometer
-            );
+        if ($vehicle !== null && $this->odometer_reading > $vehicle->current_odometer) {
+            $vehicle->update(['current_odometer' => $this->odometer_reading]);
         }
 
         foreach ($this->materials as $material) {
@@ -187,7 +163,7 @@ class Index extends Component
         $this->showModal = false;
         $this->resetPage();
 
-        session()->flash('success', __('Maintenance record created successfully.'));
+        session()->flash('success', __('Repair record created successfully.'));
     }
 
     private function resetForm(): void
@@ -197,8 +173,6 @@ class Index extends Component
         $this->odometer_reading = null;
         $this->description_of_work = '';
         $this->personnel_labor_cost = 0.0;
-        $this->next_maintenance_due_at = null;
-        $this->next_maintenance_due_odometer = null;
         $this->materials = [];
         $this->addMaterialRow();
     }
@@ -208,14 +182,14 @@ class Index extends Component
         $this->authorize('export', MaintenanceRecord::class);
 
         $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
-            ->where('type', MaintenanceRecord::TYPE_MAINTENANCE)
+            ->where('type', MaintenanceRecord::TYPE_REPAIR)
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
             })
             ->orderByDesc('performed_at')
             ->get();
 
-        $filename = 'maintenance_records_' . now()->format('Y-m-d_His') . '.csv';
+        $filename = 'repair_records_' . now()->format('Y-m-d_His') . '.csv';
 
         return response()->streamDownload(function () use ($records): void {
             $handle = fopen('php://output', 'w');
@@ -231,8 +205,6 @@ class Index extends Component
                 'Labor Cost',
                 'Materials Cost',
                 'Total Cost',
-                'Next Due Date',
-                'Next Due Odometer',
                 'Materials Used',
             ]);
 
@@ -252,8 +224,6 @@ class Index extends Component
                     $record->personnel_labor_cost,
                     $record->materials_cost_total,
                     $record->total_cost,
-                    $record->next_maintenance_due_at?->format('Y-m-d'),
-                    $record->next_maintenance_due_odometer,
                     $materialsText,
                 ]);
             }
@@ -265,48 +235,10 @@ class Index extends Component
         ]);
     }
 
-    public function exportPdf(): Response
-    {
-        $this->authorize('export', MaintenanceRecord::class);
-
-        $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
-            ->where('type', MaintenanceRecord::TYPE_MAINTENANCE)
-            ->when($this->vehicleFilter, function ($query): void {
-                $query->where('vehicle_id', $this->vehicleFilter);
-            })
-            ->orderByDesc('performed_at')
-            ->get();
-
-        $filename = 'maintenance_records_' . now()->format('Y-m-d_His') . '.pdf';
-
-        $pdf = Pdf::loadView('exports.maintenance-records-pdf', [
-            'records' => $records,
-        ]);
-
-        return $pdf->download($filename);
-    }
-
-    public function exportExcel(): BinaryFileResponse
-    {
-        $this->authorize('export', MaintenanceRecord::class);
-
-        $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
-            ->where('type', MaintenanceRecord::TYPE_MAINTENANCE)
-            ->when($this->vehicleFilter, function ($query): void {
-                $query->where('vehicle_id', $this->vehicleFilter);
-            })
-            ->orderByDesc('performed_at')
-            ->get();
-
-        $filename = 'maintenance_records_' . now()->format('Y-m-d_His') . '.xlsx';
-
-        return Excel::download(new MaintenanceRecordsExport($records), $filename);
-    }
-
     private function getRecords(): LengthAwarePaginator
     {
         return MaintenanceRecord::with('vehicle')
-            ->where('type', MaintenanceRecord::TYPE_MAINTENANCE)
+            ->where('type', MaintenanceRecord::TYPE_REPAIR)
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
             })

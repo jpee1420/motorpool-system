@@ -13,7 +13,11 @@ class MaintenanceRecord extends Model
 {
     use HasFactory;
 
+    public const TYPE_MAINTENANCE = 'maintenance';
+    public const TYPE_REPAIR = 'repair';
+
     protected $fillable = [
+        'type',
         'vehicle_id',
         'performed_by_user_id',
         'performed_at',

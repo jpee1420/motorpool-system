@@ -6,6 +6,8 @@ use App\Livewire\Calendar\Index as CalendarIndex;
 use App\Livewire\Maintenance\Index as MaintenanceIndex;
 use App\Livewire\Maintenance\Show as MaintenanceShow;
 use App\Livewire\Notifications\Index as NotificationsIndex;
+use App\Livewire\Repair\Index as RepairIndex;
+use App\Livewire\Repair\Show as RepairShow;
 use App\Livewire\TripTickets\Index as TripTicketsIndex;
 use App\Livewire\TripTickets\Show as TripTicketsShow;
 use App\Livewire\Vehicles\Index as VehiclesIndex;
@@ -36,6 +38,14 @@ Route::get('maintenance', MaintenanceIndex::class)
 Route::get('maintenance/{record}', MaintenanceShow::class)
     ->middleware(['auth', 'verified'])
     ->name('maintenance.show');
+
+Route::get('repair', RepairIndex::class)
+    ->middleware(['auth', 'verified'])
+    ->name('repair.index');
+
+Route::get('repair/{record}', RepairShow::class)
+    ->middleware(['auth', 'verified'])
+    ->name('repair.show');
 
 Route::get('notifications', NotificationsIndex::class)
     ->middleware(['auth', 'verified'])

@@ -3,18 +3,18 @@
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">
-                    {{ __('Maintenance detail') }}
+                    {{ __('Repair detail') }}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500">
-                    {{ __('Review work done, costs, and materials for this maintenance record.') }}
+                    {{ __('Review work done, costs, and materials for this repair record.') }}
                 </p>
             </div>
 
             <a
-                href="{{ route('maintenance.index') }}"
+                href="{{ route('repair.index') }}"
                 class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-                {{ __('Back to maintenance list') }}
+                {{ __('Back to repair list') }}
             </a>
         </div>
 
@@ -61,7 +61,7 @@
 
         <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6 space-y-4">
             <h2 class="text-sm font-semibold text-gray-900">
-                {{ __('Maintenance details') }}
+                {{ __('Repair details') }}
             </h2>
 
             <dl class="grid gap-4 sm:grid-cols-2 text-sm">
@@ -97,18 +97,6 @@
                     <dt class="font-medium text-gray-500">{{ __('Total cost') }}</dt>
                     <dd class="mt-1 text-gray-900 font-semibold">
                         ₱{{ number_format($record->total_cost, 2) }}
-                    </dd>
-                </div>
-                <div>
-                    <dt class="font-medium text-gray-500">{{ __('Next maintenance date') }}</dt>
-                    <dd class="mt-1 text-gray-900">
-                        {{ $record->next_maintenance_due_at?->format('M d, Y') ?? '—' }}
-                    </dd>
-                </div>
-                <div>
-                    <dt class="font-medium text-gray-500">{{ __('Next maintenance odometer') }}</dt>
-                    <dd class="mt-1 text-gray-900">
-                        {{ $record->next_maintenance_due_odometer ? number_format($record->next_maintenance_due_odometer) . ' km' : '—' }}
                     </dd>
                 </div>
             </dl>
@@ -175,7 +163,7 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="px-3 py-4 text-center text-gray-500">
-                                    {{ __('No materials recorded for this maintenance.') }}
+                                    {{ __('No materials recorded for this repair.') }}
                                 </td>
                             </tr>
                         @endforelse

@@ -35,11 +35,15 @@ new class extends Component
                     </x-nav-link>
 
                     <x-nav-link :href="route('vehicles.index')" :active="request()->routeIs('vehicles.*')" wire:navigate>
-                        {{ __('Vehicles') }}
+                        {{ __('Vehicles/Equipments') }}
                     </x-nav-link>
 
                     <x-nav-link :href="route('maintenance.index')" :active="request()->routeIs('maintenance.*')" wire:navigate>
                         {{ __('Maintenance') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('repair.index')" :active="request()->routeIs('repair.*')" wire:navigate>
+                        {{ __('Repair') }}
                     </x-nav-link>
 
                     <x-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')" wire:navigate>
@@ -117,6 +121,10 @@ new class extends Component
 
             <x-responsive-nav-link :href="route('maintenance.index')" :active="request()->routeIs('maintenance.*')" wire:navigate>
                 {{ __('Maintenance') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('repair.index')" :active="request()->routeIs('repair.*')" wire:navigate>
+                {{ __('Repair') }}
             </x-responsive-nav-link>
 
             <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')" wire:navigate>

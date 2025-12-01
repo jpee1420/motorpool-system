@@ -48,4 +48,12 @@ class TripTicketPolicy
     {
         return $user->isActive() && $user->isAdmin();
     }
+
+    /**
+     * Determine whether the user can export trip tickets.
+     */
+    public function export(User $user): bool
+    {
+        return $user->isActive() && $user->isStaffOrAbove();
+    }
 }

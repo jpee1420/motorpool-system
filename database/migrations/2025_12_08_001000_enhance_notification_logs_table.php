@@ -31,15 +31,28 @@ return new class extends Migration
             $table->index(['user_id', 'channel', 'read_at']);
         });
 
-        // 7. Support for in_app - make recipient_contact nullable (using raw SQL to avoid doctrine/dbal)
-        DB::statement('ALTER TABLE notification_logs MODIFY recipient_contact VARCHAR(255) NULL');
+        // 7. Support for in_app - make recipient_contact nullable (driver-specific SQL to avoid doctrine/dbal)
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'mysql') {
+            DB::statement('ALTER TABLE notification_logs MODIFY recipient_contact VARCHAR(255) NULL');
+        } elseif ($driver === 'pgsql') {
+            DB::statement('ALTER TABLE notification_logs ALTER COLUMN recipient_contact DROP NOT NULL');
+        }
     }
 
     public function down(): void
     {
-        // Revert recipient_contact to NOT NULL
+        // Revert recipient_contact to NOT NULL (driver-specific)
+        $driver = DB::connection()->getDriverName();
+
         DB::statement("UPDATE notification_logs SET recipient_contact = '' WHERE recipient_contact IS NULL");
-        DB::statement('ALTER TABLE notification_logs MODIFY recipient_contact VARCHAR(255) NOT NULL');
+
+        if ($driver === 'mysql') {
+            DB::statement('ALTER TABLE notification_logs MODIFY recipient_contact VARCHAR(255) NOT NULL');
+        } elseif ($driver === 'pgsql') {
+            DB::statement('ALTER TABLE notification_logs ALTER COLUMN recipient_contact SET NOT NULL');
+        }
 
         Schema::table('notification_logs', function (Blueprint $table): void {
             $table->dropIndex(['channel', 'status']);

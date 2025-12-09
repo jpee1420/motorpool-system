@@ -2,9 +2,9 @@
 
 @php
     $src = match ($variant) {
-        'auth' => Vite::asset('resources/logo/login-logo.svg'),
-        'mobile' => Vite::asset('resources/logo/mobile-header-logo.svg'),
-        default => Vite::asset('resources/logo/desktop-header-logo.svg'),
+        'auth' => asset('logo/login-logo.svg'),
+        'mobile' => asset('logo/mobile-header-logo.svg'),
+        default => asset('logo/desktop-header-logo.svg'),
     };
 @endphp
 

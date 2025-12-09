@@ -13,12 +13,9 @@ class MaintenanceRecord extends Model
 {
     use HasFactory;
 
-    public const TYPE_MAINTENANCE = 'maintenance';
-    public const TYPE_REPAIR = 'repair';
-
     protected $fillable = [
-        'type',
         'vehicle_id',
+        'assigned_driver_id',
         'performed_by_user_id',
         'performed_at',
         'odometer_reading',
@@ -47,6 +44,14 @@ class MaintenanceRecord extends Model
     public function performedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'performed_by_user_id');
+    }
+
+    /**
+     * The driver assigned to the vehicle at the time this record was created.
+     */
+    public function assignedDriver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_driver_id');
     }
 
     public function materials(): HasMany

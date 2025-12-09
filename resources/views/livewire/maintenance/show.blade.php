@@ -1,21 +1,42 @@
-<div class="py-10">
+<div class="py-10" x-data="{ confirmOpen: false }">
+    {{-- Delete Confirmation Modal --}}
+    @can('delete', $record)
+        <x-confirm-modal
+            :title="__('Delete maintenance record')"
+            :description="__('Are you sure you want to delete this maintenance record? This action cannot be undone.')"
+            confirm-wire-click="delete"
+        />
+    @endcan
+
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">
                     {{ __('Maintenance detail') }}
                 </h1>
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="mt-1 text-sm text-gray-500 hidden sm:block">
                     {{ __('Review work done, costs, and materials for this maintenance record.') }}
                 </p>
             </div>
 
-            <a
-                href="{{ route('maintenance.index') }}"
-                class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-                {{ __('Back to maintenance list') }}
-            </a>
+            <div class="flex items-center gap-2">
+                @can('delete', $record)
+                    <button
+                        type="button"
+                        x-on:click.prevent="confirmOpen = true"
+                        class="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
+                    >
+                        {{ __('Delete') }}
+                    </button>
+                @endcan
+
+                <a
+                    href="{{ route('maintenance.index') }}"
+                    class="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                    {{ __('Back') }}
+                </a>
+            </div>
         </div>
 
         <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6 space-y-4">
@@ -39,8 +60,10 @@
                     <dd class="mt-1 text-gray-900">{{ $record->vehicle?->year ?? '—' }}</dd>
                 </div>
                 <div>
-                    <dt class="font-medium text-gray-500">{{ __('Driver / operator') }}</dt>
-                    <dd class="mt-1 text-gray-900">{{ $record->vehicle?->driver_operator ?? '—' }}</dd>
+                    <dt class="font-medium text-gray-500">{{ __('Driver / Operator') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        {{ $record->assignedDriver?->name ?? $record->vehicle?->driver_operator ?? '—' }}
+                    </dd>
                 </div>
                 <div>
                     <dt class="font-medium text-gray-500">{{ __('Current odometer') }}</dt>

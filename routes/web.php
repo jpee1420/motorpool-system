@@ -14,7 +14,7 @@ use App\Livewire\Vehicles\Index as VehiclesIndex;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
-Route::view('/', 'welcome');
+Route::redirect('/', '/login');
 
 Route::post('/logout', function () {
     Auth::logout();
@@ -24,51 +24,51 @@ Route::post('/logout', function () {
 })->name('logout');
 
 Route::get('dashboard', DashboardController::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('dashboard');
 
 Route::get('vehicles', VehiclesIndex::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('vehicles.index');
 
 Route::get('maintenance', MaintenanceIndex::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('maintenance.index');
 
 Route::get('maintenance/{record}', MaintenanceShow::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('maintenance.show');
 
 Route::get('repair', RepairIndex::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('repair.index');
 
 Route::get('repair/{record}', RepairShow::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('repair.show');
 
 Route::get('notifications', NotificationsIndex::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('notifications.index');
 
 Route::get('calendar', CalendarIndex::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('calendar.index');
 
 Route::get('trip-tickets', TripTicketsIndex::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('trip-tickets.index');
 
 Route::get('trip-tickets/{ticket}', TripTicketsShow::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('trip-tickets.show');
 
 Route::get('account/users', AccountUsersIndex::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('account.users');
 
 Route::view('profile', 'profile')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('profile');
 
 require __DIR__.'/auth.php';

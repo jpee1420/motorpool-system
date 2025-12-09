@@ -3,7 +3,7 @@
     <div class="hidden md:flex md:flex-col md:w-64 bg-white border-r border-gray-200">
         <div class="h-16 flex items-center px-4 border-b border-gray-200">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-2" wire:navigate>
-                <x-application-logo class="block h-8 w-auto fill-current text-indigo-600" />
+                <x-application-logo class="block h-8 w-auto" />
                 <span class="text-base font-semibold text-gray-900">
                     {{ config('app.name', 'Motorpool') }}
                 </span>
@@ -11,17 +11,34 @@
         </div>
 
         @php
+            $user = auth()->user();
+            $isStaffOrAbove = $user?->isStaffOrAbove() ?? false;
+
+            // Base nav items visible to all users
             $navItems = [
                 ['label' => __('Dashboard'), 'route' => 'dashboard', 'pattern' => 'dashboard'],
-                ['label' => __('Vehicles'), 'route' => 'vehicles.index', 'pattern' => 'vehicles.*'],
-                ['label' => __('Maintenance'), 'route' => 'maintenance.index', 'pattern' => 'maintenance.*'],
-                ['label' => __('Repair'), 'route' => 'repair.index', 'pattern' => 'repair.*'],
-                ['label' => __('Notifications'), 'route' => 'notifications.index', 'pattern' => 'notifications.*'],
-                ['label' => __('Calendar'), 'route' => 'calendar.index', 'pattern' => 'calendar.*'],
-                ['label' => __('Trip tickets'), 'route' => 'trip-tickets.index', 'pattern' => 'trip-tickets.*'],
             ];
 
-            if (auth()->user()?->role === 'admin') {
+            // Vehicles: staff see all, drivers see "My Vehicles"
+            $navItems[] = [
+                'label' => $isStaffOrAbove ? __('Vehicles') : __('My Vehicles'),
+                'route' => 'vehicles.index',
+                'pattern' => 'vehicles.*',
+            ];
+
+            // All users: Maintenance & Repair (read-only for regular users)
+            $navItems[] = ['label' => __('Maintenance'), 'route' => 'maintenance.index', 'pattern' => 'maintenance.*'];
+            $navItems[] = ['label' => __('Repair'), 'route' => 'repair.index', 'pattern' => 'repair.*'];
+
+            // Staff+ only: Notifications, Calendar, Trip tickets
+            if ($isStaffOrAbove) {
+                $navItems[] = ['label' => __('Notifications'), 'route' => 'notifications.index', 'pattern' => 'notifications.*'];
+                $navItems[] = ['label' => __('Calendar'), 'route' => 'calendar.index', 'pattern' => 'calendar.*'];
+                $navItems[] = ['label' => __('Trip tickets'), 'route' => 'trip-tickets.index', 'pattern' => 'trip-tickets.*'];
+            }
+
+            // Admin only: Users
+            if ($user?->isAdmin()) {
                 $navItems[] = ['label' => __('Users'), 'route' => 'account.users', 'pattern' => 'account.users'];
             }
         @endphp
@@ -132,6 +149,11 @@
 
             @auth
                 <div class="flex items-center gap-3">
+                    <!-- Notification Bell -->
+                    @if (auth()->user()?->isStaffOrAbove())
+                        <livewire:notifications.bell />
+                    @endif
+
                     <div class="hidden sm:flex flex-col text-right">
                         <span class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</span>
                         <span class="text-xs text-gray-500">{{ auth()->user()->email }}</span>

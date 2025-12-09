@@ -9,7 +9,6 @@ use App\Models\MaintenanceMaterial;
 use App\Models\MaintenanceRecord;
 use App\Models\Vehicle;
 use App\Services\Maintenance\NextMaintenanceCalculator;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
@@ -20,7 +19,6 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
@@ -29,6 +27,8 @@ class Index extends Component
     use WithPagination;
 
     public ?int $vehicleFilter = null;
+    public string $sortField = 'performed_at';
+    public string $sortDirection = 'desc';
 
     public bool $showModal = false;
 
@@ -82,6 +82,24 @@ class Index extends Component
 
     public function updatingVehicleFilter(): void
     {
+        $this->resetPage();
+    }
+
+    public function sortBy(string $field): void
+    {
+        $allowed = ['performed_at', 'odometer_reading', 'total_cost', 'next_maintenance_due_at', 'created_at'];
+
+        if (! in_array($field, $allowed, true)) {
+            return;
+        }
+
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = $field === 'performed_at' ? 'desc' : 'asc';
+        }
+
         $this->resetPage();
     }
 
@@ -139,9 +157,13 @@ class Index extends Component
             $this->odometer_reading
         );
 
+        // Get the vehicle and its currently assigned driver
+        $vehicle = Vehicle::find($this->vehicle_id);
+        $assignedDriverId = $vehicle?->user_id;
+
         $record = MaintenanceRecord::create([
-            'type' => MaintenanceRecord::TYPE_MAINTENANCE,
             'vehicle_id' => $this->vehicle_id,
+            'assigned_driver_id' => $assignedDriverId,
             'performed_by_user_id' => Auth::id(),
             'performed_at' => $performedAt,
             'odometer_reading' => $this->odometer_reading,
@@ -152,8 +174,6 @@ class Index extends Component
             'next_maintenance_due_at' => $nextDueAt,
             'next_maintenance_due_odometer' => $nextDueOdometer,
         ]);
-
-        $vehicle = Vehicle::find($this->vehicle_id);
 
         if ($vehicle !== null) {
             $calculator->updateVehicleAfterMaintenance(
@@ -208,7 +228,6 @@ class Index extends Component
         $this->authorize('export', MaintenanceRecord::class);
 
         $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
-            ->where('type', MaintenanceRecord::TYPE_MAINTENANCE)
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
             })
@@ -265,33 +284,11 @@ class Index extends Component
         ]);
     }
 
-    public function exportPdf(): Response
-    {
-        $this->authorize('export', MaintenanceRecord::class);
-
-        $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
-            ->where('type', MaintenanceRecord::TYPE_MAINTENANCE)
-            ->when($this->vehicleFilter, function ($query): void {
-                $query->where('vehicle_id', $this->vehicleFilter);
-            })
-            ->orderByDesc('performed_at')
-            ->get();
-
-        $filename = 'maintenance_records_' . now()->format('Y-m-d_His') . '.pdf';
-
-        $pdf = Pdf::loadView('exports.maintenance-records-pdf', [
-            'records' => $records,
-        ]);
-
-        return $pdf->download($filename);
-    }
-
     public function exportExcel(): BinaryFileResponse
     {
         $this->authorize('export', MaintenanceRecord::class);
 
         $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
-            ->where('type', MaintenanceRecord::TYPE_MAINTENANCE)
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
             })
@@ -306,11 +303,10 @@ class Index extends Component
     private function getRecords(): LengthAwarePaginator
     {
         return MaintenanceRecord::with('vehicle')
-            ->where('type', MaintenanceRecord::TYPE_MAINTENANCE)
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
             })
-            ->orderByDesc('performed_at')
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(10);
     }
 }

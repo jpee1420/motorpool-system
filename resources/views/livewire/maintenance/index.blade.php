@@ -37,58 +37,50 @@
                     </select>
                 </div>
 
-                <div class="flex flex-wrap items-center gap-2 sm:justify-end">
-                    <button
-                        type="button"
-                        wire:click="exportCsv"
-                        wire:loading.attr="disabled"
-                        wire:target="exportCsv"
-                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span wire:loading.remove wire:target="exportCsv">{{ __('CSV') }}</span>
-                        <span wire:loading wire:target="exportCsv">{{ __('...') }}</span>
-                    </button>
+                @if ($canExport || $canCreate)
+                    <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+                        @if ($canExport)
+                            <button
+                                type="button"
+                                wire:click="exportCsv"
+                                wire:loading.attr="disabled"
+                                wire:target="exportCsv"
+                                class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span wire:loading.remove wire:target="exportCsv">{{ __('CSV') }}</span>
+                                <span wire:loading wire:target="exportCsv">{{ __('...') }}</span>
+                            </button>
 
-                    <button
-                        type="button"
-                        wire:click="exportPdf"
-                        wire:loading.attr="disabled"
-                        wire:target="exportPdf"
-                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        <span wire:loading.remove wire:target="exportPdf">{{ __('PDF') }}</span>
-                        <span wire:loading wire:target="exportPdf">{{ __('...') }}</span>
-                    </button>
+                            <button
+                                type="button"
+                                wire:click="exportExcel"
+                                wire:loading.attr="disabled"
+                                wire:target="exportExcel"
+                                class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span wire:loading.remove wire:target="exportExcel">{{ __('Excel') }}</span>
+                                <span wire:loading wire:target="exportExcel">{{ __('...') }}</span>
+                            </button>
+                        @endif
 
-                    <button
-                        type="button"
-                        wire:click="exportExcel"
-                        wire:loading.attr="disabled"
-                        wire:target="exportExcel"
-                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span wire:loading.remove wire:target="exportExcel">{{ __('Excel') }}</span>
-                        <span wire:loading wire:target="exportExcel">{{ __('...') }}</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        wire:click="openCreateModal"
-                        wire:loading.attr="disabled"
-                        class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 w-full sm:w-auto sm:ml-2"
-                    >
-                        {{ __('Add maintenance record') }}
-                    </button>
-                </div>
+                        @if ($canCreate)
+                            <button
+                                type="button"
+                                wire:click="openCreateModal"
+                                wire:loading.attr="disabled"
+                                class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 w-full sm:w-auto sm:ml-2"
+                            >
+                                {{ __('Add maintenance record') }}
+                            </button>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -101,10 +93,20 @@
                                 {{ __('Vehicle') }}
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Performed at') }}
+                                <button type="button" wire:click="sortBy('performed_at')" class="flex items-center gap-1">
+                                    <span>{{ __('Performed at') }}</span>
+                                    @if ($sortField === 'performed_at')
+                                        <span class="text-[10px]">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                    @endif
+                                </button>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Odometer') }}
+                                <button type="button" wire:click="sortBy('odometer_reading')" class="flex items-center gap-1">
+                                    <span>{{ __('Odometer') }}</span>
+                                    @if ($sortField === 'odometer_reading')
+                                        <span class="text-[10px]">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                    @endif
+                                </button>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                 {{ __('Labor cost') }}
@@ -113,7 +115,12 @@
                                 {{ __('Materials cost') }}
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Total cost') }}
+                                <button type="button" wire:click="sortBy('total_cost')" class="flex items-center gap-1">
+                                    <span>{{ __('Total cost') }}</span>
+                                    @if ($sortField === 'total_cost')
+                                        <span class="text-[10px]">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                    @endif
+                                </button>
                             </th>
                             <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                                 {{ __('Actions') }}

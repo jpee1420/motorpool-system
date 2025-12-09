@@ -17,10 +17,10 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">
-                    {{ __('Vehicles/Equipments') }}
+                    {{ $isStaffOrAbove ? __('Vehicles/Equipments') : __('My Vehicles') }}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500">
-                    {{ __('Manage your motorpool vehicles and their current status.') }}
+                    {{ $isStaffOrAbove ? __('Manage your motorpool vehicles and their current status.') : __('View the vehicles assigned to you.') }}
                 </p>
             </div>
 
@@ -49,28 +49,46 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button
-                        type="button"
-                        wire:click="exportCsv"
-                        wire:loading.attr="disabled"
-                        wire:target="exportCsv"
-                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
-                    >
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span wire:loading.remove wire:target="exportCsv">{{ __('Export CSV') }}</span>
-                        <span wire:loading wire:target="exportCsv">{{ __('Exporting...') }}</span>
-                    </button>
+                    @if ($canExport)
+                        <button
+                            type="button"
+                            wire:click="exportCsv"
+                            wire:loading.attr="disabled"
+                            wire:target="exportCsv"
+                            class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-3-3v6m7 5H5a2 2 0 01-2-2V5a2 2 0 012-2h7.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span wire:loading.remove wire:target="exportCsv">{{ __('CSV') }}</span>
+                            <span wire:loading wire:target="exportCsv">{{ __('...') }}</span>
+                        </button>
 
-                    <button
-                        type="button"
-                        wire:click="openCreateModal"
-                        wire:loading.attr="disabled"
-                        class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
-                    >
-                        {{ __('Add vehicle') }}
-                    </button>
+                        <button
+                            type="button"
+                            wire:click="exportExcel"
+                            wire:loading.attr="disabled"
+                            wire:target="exportExcel"
+                            class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span wire:loading.remove wire:target="exportExcel">{{ __('Excel') }}</span>
+                            <span wire:loading wire:target="exportExcel">{{ __('...') }}</span>
+                        </button>
+                    @endif
+
+                    @if ($canCreate)
+                        <button
+                            type="button"
+                            wire:click="openCreateModal"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50"
+                        >
+                            {{ __('Add vehicle') }}
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -84,13 +102,28 @@
                                 {{ __('Photo') }}
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Plate number') }}
+                                <button type="button" wire:click="sortBy('plate_number')" class="flex items-center gap-1">
+                                    <span>{{ __('Plate number') }}</span>
+                                    @if ($sortField === 'plate_number')
+                                        <span class="text-[10px]">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                    @endif
+                                </button>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Make / Model') }}
+                                <button type="button" wire:click="sortBy('make')" class="flex items-center gap-1">
+                                    <span>{{ __('Make / Model') }}</span>
+                                    @if ($sortField === 'make')
+                                        <span class="text-[10px]">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                    @endif
+                                </button>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Year') }}
+                                <button type="button" wire:click="sortBy('year')" class="flex items-center gap-1">
+                                    <span>{{ __('Year') }}</span>
+                                    @if ($sortField === 'year')
+                                        <span class="text-[10px]">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                    @endif
+                                </button>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                 {{ __('Current odometer') }}
@@ -99,7 +132,12 @@
                                 {{ __('Next maintenance') }}
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Status') }}
+                                <button type="button" wire:click="sortBy('status')" class="flex items-center gap-1">
+                                    <span>{{ __('Status') }}</span>
+                                    @if ($sortField === 'status')
+                                        <span class="text-[10px]">{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                                    @endif
+                                </button>
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                 {{ __('Actions') }}
@@ -157,28 +195,52 @@
                                         {{ ucfirst(str_replace('-', ' ', $vehicle->status ?? 'unknown')) }}
                                     </span>
                                 </td>
-                                <td class="px-3 py-3 whitespace-nowrap text-right text-gray-700">
-                                    <div class="inline-flex items-center gap-2">
+                                <td class="px-3 py-3 text-gray-700" x-data="{ confirmOpen: false }">
+                                    <div class="flex items-center justify-end gap-2">
                                         <a
                                             href="{{ route('maintenance.index', ['vehicleFilter' => $vehicle->id]) }}"
                                             class="text-indigo-600 hover:text-indigo-900 text-xs font-medium"
                                         >
                                             {{ __('History') }}
                                         </a>
-                                        <button
-                                            type="button"
-                                            wire:click="edit({{ $vehicle->id }})"
-                                            class="text-gray-600 hover:text-gray-900 text-xs font-medium"
-                                        >
-                                            {{ __('Edit') }}
-                                        </button>
+
+                                        @if ($canCreate)
+                                            <button
+                                                type="button"
+                                                wire:click="edit({{ $vehicle->id }})"
+                                                class="text-gray-600 hover:text-gray-900 text-xs font-medium"
+                                            >
+                                                {{ __('Edit') }}
+                                            </button>
+                                        @endif
+
+                                        @if ($canDelete)
+                                            <button
+                                                type="button"
+                                                x-on:click.prevent="confirmOpen = true"
+                                                class="text-red-600 hover:text-red-800 text-xs font-medium"
+                                            >
+                                                {{ __('Delete') }}
+                                            </button>
+
+                                            {{-- Delete Confirmation Modal --}}
+                                            <x-confirm-modal
+                                                :title="__('Delete vehicle')"
+                                                :description="__('Are you sure you want to delete this vehicle? This action cannot be undone.')"
+                                                confirm-wire-click="delete({{ $vehicle->id }})"
+                                            />
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
                                 <td colspan="8" class="px-3 py-6 text-center text-gray-500">
-                                    {{ __('No vehicles found. Add your first vehicle to get started.') }}
+                                    @if ($isStaffOrAbove)
+                                        {{ __('No vehicles found. Add your first vehicle to get started.') }}
+                                    @else
+                                        {{ __('No vehicles have been assigned to you yet.') }}
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse
@@ -231,8 +293,9 @@
                             </label>
                             <input
                                 type="text"
-                                wire:model="plate_number"
-                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                wire:model.blur="plate_number"
+                                maxlength="15"
+                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm uppercase focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('plate_number')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -297,14 +360,18 @@
 
                         <div>
                             <label class="block text-sm font-medium text-gray-700">
-                                {{ __('Driver / operator') }}
+                                {{ __('Driver / Operator') }}
                             </label>
-                            <input
-                                type="text"
-                                wire:model="driver_operator"
+                            <select
+                                wire:model="assigned_user_id"
                                 class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
-                            @error('driver_operator')
+                                <option value="">{{ __('No driver assigned') }}</option>
+                                @foreach ($drivers as $driver)
+                                    <option value="{{ $driver->id }}">{{ $driver->name }} ({{ $driver->email }})</option>
+                                @endforeach
+                            </select>
+                            @error('assigned_user_id')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>

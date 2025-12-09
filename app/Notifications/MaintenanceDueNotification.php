@@ -15,8 +15,11 @@ class MaintenanceDueNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public ?Vehicle $vehicle, public ?MaintenanceRecord $maintenanceRecord)
-    {
+    public function __construct(
+        public ?Vehicle $vehicle,
+        public ?MaintenanceRecord $maintenanceRecord,
+        public ?string $mailer = null
+    ) {
     }
 
     public function via(object $notifiable): array
@@ -62,6 +65,11 @@ class MaintenanceDueNotification extends Notification implements ShouldQueue
         }
 
         $mailMessage->line('Please schedule the maintenance as soon as possible.');
+
+        // Use specific mailer if configured
+        if ($this->mailer !== null && $this->mailer !== 'default') {
+            $mailMessage->mailer($this->mailer);
+        }
 
         return $mailMessage;
     }

@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Livewire\TripTickets;
 
 use App\Exports\TripTicketsExport;
+use App\Models\NotificationLog;
 use App\Models\TripTicket;
+use App\Models\User;
 use App\Models\Vehicle;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
@@ -19,7 +20,6 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
@@ -127,11 +127,13 @@ class Index extends Component
 
             session()->flash('success', __('Trip ticket updated successfully.'));
         } else {
-            TripTicket::create(array_merge($data, [
+            $ticket = TripTicket::create(array_merge($data, [
                 'requested_by_user_id' => Auth::id(),
                 'status' => 'pending',
                 'notes' => null,
             ]));
+
+            $this->logTripTicketNotification($ticket);
 
             session()->flash('success', __('Trip ticket created successfully.'));
         }
@@ -139,6 +141,46 @@ class Index extends Component
         $this->resetForm();
         $this->showModal = false;
         $this->resetPage();
+    }
+
+    private function logTripTicketNotification(TripTicket $ticket): void
+    {
+        $notifiableUsers = User::query()
+            ->where('status', User::STATUS_ACTIVE)
+            ->whereIn('role', [User::ROLE_ADMIN, User::ROLE_STAFF])
+            ->get();
+
+        if ($notifiableUsers->isEmpty()) {
+            return;
+        }
+
+        $meta = [
+            'trip_ticket_id' => $ticket->id,
+            'destination' => $ticket->destination,
+            'purpose' => $ticket->purpose,
+            'departure_at' => $ticket->departure_at?->toDateTimeString(),
+            'driver_name' => $ticket->driver_name,
+            'requested_by' => $ticket->requestedBy?->name,
+        ];
+
+        foreach ($notifiableUsers as $user) {
+            NotificationLog::create([
+                'vehicle_id' => $ticket->vehicle_id,
+                'maintenance_record_id' => null,
+                'user_id' => $user->id,
+                'channel' => NotificationLog::CHANNEL_IN_APP,
+                'type' => NotificationLog::TYPE_TRIP_TICKET_CREATED,
+                'trigger_reason' => null,
+                'meta' => $meta,
+                'recipient_name' => $user->name,
+                'recipient_contact' => null,
+                'sent_at' => now(),
+                'status' => NotificationLog::STATUS_SENT,
+                'error_message' => null,
+                'retry_count' => 0,
+                'max_retries_reached' => false,
+            ]);
+        }
     }
 
     private function resetForm(): void
@@ -247,21 +289,6 @@ class Index extends Component
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
-    }
-
-    public function exportPdf(): Response
-    {
-        $this->authorize('export', TripTicket::class);
-
-        $tickets = $this->getExportQuery()->get();
-
-        $filename = 'trip_tickets_' . now()->format('Y-m-d_His') . '.pdf';
-
-        $pdf = Pdf::loadView('exports.trip-tickets-pdf', [
-            'tickets' => $tickets,
-        ]);
-
-        return $pdf->download($filename);
     }
 
     public function exportExcel(): BinaryFileResponse

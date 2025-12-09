@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Repair;
 
-use App\Models\MaintenanceMaterial;
-use App\Models\MaintenanceRecord;
+use App\Exports\RepairRecordsExport;
+use App\Models\RepairMaterial;
+use App\Models\RepairRecord;
 use App\Models\Vehicle;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -15,6 +16,8 @@ use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
@@ -23,6 +26,8 @@ class Index extends Component
     use WithPagination;
 
     public ?int $vehicleFilter = null;
+    public string $sortField = 'performed_at';
+    public string $sortDirection = 'desc';
 
     public bool $showModal = false;
 
@@ -52,7 +57,7 @@ class Index extends Component
 
     public function mount(): void
     {
-        $this->authorize('viewAny', MaintenanceRecord::class);
+        $this->authorize('viewAny', RepairRecord::class);
     }
 
     #[Layout('layouts.app')]
@@ -64,8 +69,8 @@ class Index extends Component
         return view('livewire.repair.index', [
             'records' => $records,
             'vehicles' => $vehicles,
-            'canCreate' => auth()->user()?->can('create', MaintenanceRecord::class) ?? false,
-            'canExport' => auth()->user()?->can('export', MaintenanceRecord::class) ?? false,
+            'canCreate' => auth()->user()?->can('create', RepairRecord::class) ?? false,
+            'canExport' => auth()->user()?->can('export', RepairRecord::class) ?? false,
         ]);
     }
 
@@ -74,9 +79,27 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function sortBy(string $field): void
+    {
+        $allowed = ['performed_at', 'odometer_reading', 'total_cost', 'created_at'];
+
+        if (! in_array($field, $allowed, true)) {
+            return;
+        }
+
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = $field === 'performed_at' ? 'desc' : 'asc';
+        }
+
+        $this->resetPage();
+    }
+
     public function openCreateModal(): void
     {
-        $this->authorize('create', MaintenanceRecord::class);
+        $this->authorize('create', RepairRecord::class);
 
         $this->resetForm();
         $this->showModal = true;
@@ -101,7 +124,7 @@ class Index extends Component
 
     public function save(): void
     {
-        $this->authorize('create', MaintenanceRecord::class);
+        $this->authorize('create', RepairRecord::class);
 
         $this->validate();
 
@@ -119,9 +142,13 @@ class Index extends Component
 
         $totalCost = $this->personnel_labor_cost + $materialsCostTotal;
 
-        $record = MaintenanceRecord::create([
-            'type' => MaintenanceRecord::TYPE_REPAIR,
+        // Get the vehicle and its currently assigned driver
+        $vehicle = Vehicle::find($this->vehicle_id);
+        $assignedDriverId = $vehicle?->user_id;
+
+        $record = RepairRecord::create([
             'vehicle_id' => $this->vehicle_id,
+            'assigned_driver_id' => $assignedDriverId,
             'performed_by_user_id' => Auth::id(),
             'performed_at' => $performedAt,
             'odometer_reading' => $this->odometer_reading,
@@ -129,12 +156,10 @@ class Index extends Component
             'personnel_labor_cost' => $this->personnel_labor_cost,
             'materials_cost_total' => $materialsCostTotal,
             'total_cost' => $totalCost,
-            'next_maintenance_due_at' => null,
-            'next_maintenance_due_odometer' => null,
+            'notes' => null,
         ]);
 
         // Update vehicle's current odometer if this repair reading is higher
-        $vehicle = Vehicle::find($this->vehicle_id);
 
         if ($vehicle !== null && $this->odometer_reading > $vehicle->current_odometer) {
             $vehicle->update(['current_odometer' => $this->odometer_reading]);
@@ -148,8 +173,8 @@ class Index extends Component
             $quantity = (float) ($material['quantity'] ?? 0);
             $unitCost = (float) ($material['unit_cost'] ?? 0);
 
-            MaintenanceMaterial::create([
-                'maintenance_record_id' => $record->id,
+            RepairMaterial::create([
+                'repair_record_id' => $record->id,
                 'name' => $material['name'],
                 'description' => $material['description'] ?? null,
                 'quantity' => $quantity,
@@ -179,10 +204,9 @@ class Index extends Component
 
     public function exportCsv(): StreamedResponse
     {
-        $this->authorize('export', MaintenanceRecord::class);
+        $this->authorize('export', RepairRecord::class);
 
-        $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
-            ->where('type', MaintenanceRecord::TYPE_REPAIR)
+        $records = RepairRecord::with(['vehicle', 'materials', 'performedBy'])
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
             })
@@ -235,14 +259,29 @@ class Index extends Component
         ]);
     }
 
-    private function getRecords(): LengthAwarePaginator
+    public function exportExcel(): BinaryFileResponse
     {
-        return MaintenanceRecord::with('vehicle')
-            ->where('type', MaintenanceRecord::TYPE_REPAIR)
+        $this->authorize('export', RepairRecord::class);
+
+        $records = RepairRecord::with(['vehicle', 'materials', 'performedBy'])
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
             })
             ->orderByDesc('performed_at')
+            ->get();
+
+        $filename = 'repair_records_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(new RepairRecordsExport($records), $filename);
+    }
+
+    private function getRecords(): LengthAwarePaginator
+    {
+        return RepairRecord::with('vehicle')
+            ->when($this->vehicleFilter, function ($query): void {
+                $query->where('vehicle_id', $this->vehicleFilter);
+            })
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(10);
     }
 }

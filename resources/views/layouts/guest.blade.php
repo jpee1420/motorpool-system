@@ -15,14 +15,29 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-            <div>
+        <div class="min-h-screen flex flex-col justify-center items-center px-4 py-0 sm:py-4 bg-gray-50">
+            {{-- Logo --}}
+            <div class="mb-2">
                 <a href="/" wire:navigate>
-                    <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
+                    <x-application-logo variant="auth" class="h-16 w-auto mx-auto" />
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+            {{-- Title & Subtitle (provided via $title and $subtitle slots, or defaults) --}}
+            @isset($title)
+                <h1 class="text-xl sm:text-2xl font-semibold text-gray-900 text-center mb-2">
+                    {{ $title }}
+                </h1>
+            @endisset
+{{-- 
+            @isset($subtitle)
+                <p class="text-sm text-gray-500 text-center mb-6 max-w-sm">
+                    {{ $subtitle }}
+                </p>
+            @endisset --}}
+
+            {{-- Card --}}
+            <div class="w-full sm:max-w-md px-6 py-4 bg-white shadow-sm border border-gray-200 sm:rounded-xl">
                 {{ $slot }}
             </div>
         </div>

@@ -10,6 +10,7 @@ use App\Models\Vehicle;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
@@ -185,6 +186,8 @@ class Index extends Component
 
     public function save(): void
     {
+        $vehicle = null;
+
         if ($this->editingId) {
             $vehicle = Vehicle::findOrFail($this->editingId);
             $this->authorize('update', $vehicle);
@@ -201,7 +204,7 @@ class Index extends Component
         }
 
         if ($this->editingId) {
-            $vehicle = Vehicle::findOrFail($this->editingId);
+            $oldPhotoPath = $vehicle?->photo_path;
 
             $data = [
                 'vehicle_type' => $this->vehicle_type,
@@ -221,7 +224,11 @@ class Index extends Component
                 $data['photo_path'] = $photoPath;
             }
 
-            $vehicle->update($data);
+            $vehicle?->update($data);
+
+            if ($photoPath && $oldPhotoPath && $oldPhotoPath !== $photoPath) {
+                Storage::disk('public')->delete($oldPhotoPath);
+            }
 
             session()->flash('success', __('Vehicle updated successfully.'));
         } else {
@@ -254,7 +261,13 @@ class Index extends Component
 
         $this->authorize('delete', $vehicle);
 
+        $photoPath = $vehicle->photo_path;
+
         $vehicle->delete();
+
+        if ($photoPath) {
+            Storage::disk('public')->delete($photoPath);
+        }
 
         session()->flash('success', __('Vehicle deleted successfully.'));
 

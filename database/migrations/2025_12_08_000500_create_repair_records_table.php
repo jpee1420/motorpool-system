@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('vehicle_id')->constrained()->cascadeOnDelete();
             $table->foreignId('performed_by_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('performed_by')->nullable();
             $table->dateTime('performed_at');
             $table->unsignedInteger('odometer_reading');
             $table->text('description_of_work');

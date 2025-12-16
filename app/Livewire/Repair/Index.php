@@ -11,7 +11,6 @@ use App\Models\Vehicle;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -33,6 +32,7 @@ class Index extends Component
 
     public ?int $vehicle_id = null;
     public ?string $performed_at = null;
+    public string $performed_by = '';
     public ?int $odometer_reading = null;
     public string $description_of_work = '';
     public float $personnel_labor_cost = 0.0;
@@ -44,6 +44,7 @@ class Index extends Component
         return [
             'vehicle_id' => ['required', 'integer', 'exists:vehicles,id'],
             'performed_at' => ['required', 'date'],
+            'performed_by' => ['required', 'string', 'max:255'],
             'odometer_reading' => ['required', 'integer'],
             'description_of_work' => ['required', 'string'],
             'personnel_labor_cost' => ['required', 'numeric', 'min:0'],
@@ -149,7 +150,8 @@ class Index extends Component
         $record = RepairRecord::create([
             'vehicle_id' => $this->vehicle_id,
             'assigned_driver_id' => $assignedDriverId,
-            'performed_by_user_id' => Auth::id(),
+            'performed_by_user_id' => null,
+            'performed_by' => $this->performed_by,
             'performed_at' => $performedAt,
             'odometer_reading' => $this->odometer_reading,
             'description_of_work' => $this->description_of_work,
@@ -195,6 +197,7 @@ class Index extends Component
     {
         $this->vehicle_id = null;
         $this->performed_at = null;
+        $this->performed_by = '';
         $this->odometer_reading = null;
         $this->description_of_work = '';
         $this->personnel_labor_cost = 0.0;
@@ -242,7 +245,7 @@ class Index extends Component
                     $record->id,
                     $record->vehicle?->plate_number ?? '',
                     $record->performed_at?->format('Y-m-d H:i'),
-                    $record->performedBy?->name ?? '',
+                    $record->performed_by ?: ($record->performedBy?->name ?? ''),
                     $record->odometer_reading,
                     $record->description_of_work,
                     $record->personnel_labor_cost,

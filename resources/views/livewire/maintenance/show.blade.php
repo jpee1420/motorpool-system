@@ -96,7 +96,7 @@
                 </div>
                 <div>
                     <dt class="font-medium text-gray-500">{{ __('Performed by') }}</dt>
-                    <dd class="mt-1 text-gray-900">{{ $record->performedBy?->name ?? '—' }}</dd>
+                    <dd class="mt-1 text-gray-900">{{ $record->performed_by ?: ($record->performedBy?->name ?? '—') }}</dd>
                 </div>
                 <div>
                     <dt class="font-medium text-gray-500">{{ __('Odometer reading') }}</dt>

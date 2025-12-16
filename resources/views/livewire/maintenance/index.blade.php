@@ -282,6 +282,20 @@
                             @enderror
                         </div>
 
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">
+                                {{ __('Performed by') }}
+                            </label>
+                            <input
+                                type="text"
+                                wire:model="performed_by"
+                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            >
+                            @error('performed_by')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <div class="sm:col-span-2">
                             <label class="block text-sm font-medium text-gray-700">
                                 {{ __('Description of work done') }}

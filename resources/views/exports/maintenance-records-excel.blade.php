@@ -21,7 +21,7 @@
                 <td>{{ $record->id }}</td>
                 <td>{{ $record->performed_at?->format('Y-m-d H:i') }}</td>
                 <td>{{ $record->vehicle?->plate_number ?? '' }}</td>
-                <td>{{ $record->performedBy?->name ?? '' }}</td>
+                <td>{{ $record->performed_by ?: ($record->performedBy?->name ?? '') }}</td>
                 <td>{{ $record->odometer_reading }}</td>
                 <td>{{ $record->description_of_work }}</td>
                 <td>{{ $record->personnel_labor_cost }}</td>

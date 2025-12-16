@@ -17,6 +17,7 @@ class MaintenanceRecord extends Model
         'vehicle_id',
         'assigned_driver_id',
         'performed_by_user_id',
+        'performed_by',
         'performed_at',
         'odometer_reading',
         'description_of_work',

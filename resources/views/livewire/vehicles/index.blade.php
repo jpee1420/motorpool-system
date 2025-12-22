@@ -95,114 +95,106 @@
 
         <div class="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
             <div class="sm:hidden">
-                <div class="divide-y divide-gray-100">
+                <div class="bg-gray-50 p-4 space-y-4">
                     @forelse ($vehicles as $vehicle)
-                        <div class="p-4">
-                            <div class="flex gap-3">
-                                <div class="shrink-0">
+                        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                            <div class="flex gap-3 p-4 border-b border-gray-100">
+                                <div class="flex-shrink-0">
                                     @if ($vehicle->photo_path)
                                         <img
                                             src="{{ asset('storage/'.$vehicle->photo_path) }}"
                                             alt="{{ $vehicle->plate_number }}"
-                                            class="h-14 w-20 rounded object-cover border border-gray-200"
-                                        >
+                                            class="w-28 h-16 rounded-lg object-cover"
+                                        />
                                     @else
-                                        <div class="flex h-14 w-20 items-center justify-center rounded border border-dashed border-gray-300 text-xs text-gray-400">
-                                            {{ __('No photo') }}
+                                        <div class="w-28 h-16 rounded-lg bg-gray-100 flex items-center justify-center">
+                                            <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7M8 3a9 9 0 11-9 9 9 9 0 019-9z" />
+                                            </svg>
                                         </div>
                                     @endif
                                 </div>
 
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <div class="text-sm font-semibold text-gray-900 truncate">
-                                                {{ $vehicle->plate_number }}
-                                            </div>
-                                            <div class="text-sm text-gray-700 truncate">
-                                                {{ trim($vehicle->make.' '.$vehicle->model) ?: '—' }}
-                                            </div>
-                                            <div class="text-xs text-gray-500">
-                                                {{ $vehicle->year ?? '—' }}
-                                            </div>
-                                        </div>
-
-                                        <div class="shrink-0">
-                                            @php
-                                                $statusClasses = [
-                                                    'operational' => 'bg-green-100 text-green-800',
-                                                    'non-operational' => 'bg-red-100 text-red-800',
-                                                    'maintenance' => 'bg-yellow-100 text-yellow-800',
-                                                ];
-                                                $statusClass = $statusClasses[$vehicle->status] ?? 'bg-gray-100 text-gray-800';
-                                            @endphp
-                                            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $statusClass }}">
-                                                {{ ucfirst(str_replace('-', ' ', $vehicle->status ?? 'unknown')) }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <dl class="mt-3 grid grid-cols-2 gap-3 text-xs">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-2">
                                         <div>
-                                            <dt class="text-gray-500">{{ __('Current odometer') }}</dt>
-                                            <dd class="mt-0.5 text-gray-800">
-                                                {{ $vehicle->current_odometer ? number_format($vehicle->current_odometer).' km' : '—' }}
-                                            </dd>
+                                            <h3 class="text-sm font-semibold text-gray-900">{{ $vehicle->plate_number }}</h3>
+                                            <p class="text-sm text-gray-600">{{ $vehicle->make ?: '—' }}</p>
+                                            <p class="text-sm text-gray-500">{{ $vehicle->year ?? '—' }}</p>
                                         </div>
-                                        <div>
-                                            <dt class="text-gray-500">{{ __('Next maintenance') }}</dt>
-                                            <dd class="mt-0.5 text-gray-800">
-                                                <div class="flex flex-col">
-                                                    <span>{{ $vehicle->next_maintenance_due_at?->format('M d, Y') ?? '—' }}</span>
-                                                    <span class="text-[11px] text-gray-500">
-                                                        {{ $vehicle->next_maintenance_due_odometer ? number_format($vehicle->next_maintenance_due_odometer).' km' : '' }}
-                                                    </span>
-                                                </div>
-                                            </dd>
-                                        </div>
-                                    </dl>
 
-                                    <div class="mt-3" x-data="{ confirmOpen: false }">
-                                        <div class="flex flex-wrap items-center gap-3">
-                                            <a
-                                                href="{{ route('maintenance.index', ['vehicleFilter' => $vehicle->id]) }}"
-                                                class="text-indigo-600 hover:text-indigo-900 text-xs font-medium"
-                                            >
-                                                {{ __('History') }}
-                                            </a>
-
-                                            @if ($canCreate)
-                                                <button
-                                                    type="button"
-                                                    wire:click="edit({{ $vehicle->id }})"
-                                                    class="text-gray-600 hover:text-gray-900 text-xs font-medium"
-                                                >
-                                                    {{ __('Edit') }}
-                                                </button>
-                                            @endif
-
-                                            @if ($canDelete)
-                                                <button
-                                                    type="button"
-                                                    x-on:click.prevent="confirmOpen = true"
-                                                    class="text-red-600 hover:text-red-800 text-xs font-medium"
-                                                >
-                                                    {{ __('Delete') }}
-                                                </button>
-
-                                                <x-confirm-modal
-                                                    :title="__('Delete vehicle')"
-                                                    :description="__('Are you sure you want to delete this vehicle? This action cannot be undone.')"
-                                                    confirm-wire-click="delete({{ $vehicle->id }})"
-                                                />
-                                            @endif
-                                        </div>
+                                        @php
+                                            $statusPillClasses = [
+                                                'operational' => 'bg-green-50 text-green-700',
+                                                'non-operational' => 'bg-red-50 text-red-700',
+                                                'maintenance' => 'bg-yellow-50 text-yellow-700',
+                                            ];
+                                            $statusPillClass = $statusPillClasses[$vehicle->status] ?? 'bg-gray-100 text-gray-700';
+                                        @endphp
+                                        <span class="px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap {{ $statusPillClass }}">
+                                            {{ ucfirst(str_replace('-', ' ', $vehicle->status ?? 'unknown')) }}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="p-4 grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ __('Current odometer') }}</p>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        {{ $vehicle->current_odometer ? number_format($vehicle->current_odometer).' km' : '—' }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ __('Next maintenance') }}</p>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        {{ $vehicle->next_maintenance_due_at?->format('M d, Y') ?? '—' }}
+                                    </p>
+                                    @if ($vehicle->next_maintenance_due_odometer)
+                                        <p class="text-xs text-gray-500 mt-0.5">
+                                            {{ number_format($vehicle->next_maintenance_due_odometer) . ' km' }}
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="px-4 pb-4 flex gap-2 text-sm" x-data="{ confirmOpen: false }">
+                                <a
+                                    href="{{ route('maintenance.index', ['vehicleFilter' => $vehicle->id]) }}"
+                                    class="text-blue-600 hover:text-blue-700 font-medium"
+                                >
+                                    {{ __('History') }}
+                                </a>
+
+                                @if ($canCreate)
+                                    <button
+                                        type="button"
+                                        wire:click="edit({{ $vehicle->id }})"
+                                        class="text-blue-600 hover:text-blue-700 font-medium"
+                                    >
+                                        {{ __('Edit') }}
+                                    </button>
+                                @endif
+
+                                @if ($canDelete)
+                                    <button
+                                        type="button"
+                                        x-on:click.prevent="confirmOpen = true"
+                                        class="text-red-600 hover:text-red-700 font-medium"
+                                    >
+                                        {{ __('Delete') }}
+                                    </button>
+
+                                    <x-confirm-modal
+                                        :title="__('Delete vehicle')"
+                                        :description="__('Are you sure you want to delete this vehicle? This action cannot be undone.')"
+                                        confirm-wire-click="delete({{ $vehicle->id }})"
+                                    />
+                                @endif
+                            </div>
                         </div>
                     @empty
-                        <div class="px-4 py-6 text-center text-gray-500 text-sm">
+                        <div class="px-4 py-6 text-center text-gray-500 text-sm bg-white rounded-lg shadow-sm">
                             @if ($isStaffOrAbove)
                                 {{ __('No vehicles found. Add your first vehicle to get started.') }}
                             @else

@@ -118,7 +118,72 @@
         </div>
 
         <div class="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
-            <div class="overflow-x-auto">
+            <div class="sm:hidden bg-gray-50 p-4">
+                <div class="space-y-3">
+                    @forelse ($tickets as $ticket)
+                        <div class="bg-white rounded-lg shadow-sm p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-base font-semibold text-gray-900">{{ $ticket->vehicle?->plate_number ?? '—' }}</h3>
+                                    <p class="text-sm text-gray-600 mt-0.5 truncate">{{ $ticket->driver_name }}</p>
+                                </div>
+                                @php
+                                    $statusPillClasses = [
+                                        'pending' => 'bg-yellow-50 text-yellow-700',
+                                        'approved' => 'bg-blue-50 text-blue-700',
+                                        'ongoing' => 'bg-indigo-50 text-indigo-700',
+                                        'completed' => 'bg-green-50 text-green-700',
+                                        'cancelled' => 'bg-red-50 text-red-700',
+                                    ];
+                                    $statusPillClass = $statusPillClasses[$ticket->status] ?? 'bg-gray-100 text-gray-700';
+                                @endphp
+                                <span class="ml-2 px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap {{ $statusPillClass }}">
+                                    {{ ucfirst($ticket->status) }}
+                                </span>
+                            </div>
+
+                            <div class="space-y-2 border-t border-gray-100 pt-3">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase tracking-wide mb-0.5">{{ __('Destination') }}</p>
+                                    <p class="text-sm font-medium text-gray-900">{{ $ticket->destination ?: '—' }}</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-0.5">{{ __('Departure') }}</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ $ticket->departure_at?->format('M d, Y H:i') ?? '—' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-0.5">{{ __('Return') }}</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ $ticket->return_at?->format('M d, Y H:i') ?? '—' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                                <a
+                                    href="{{ route('trip-tickets.show', $ticket) }}"
+                                    class="text-blue-600 text-sm font-medium"
+                                >
+                                    {{ __('View') }}
+                                </a>
+                                <button
+                                    type="button"
+                                    wire:click="edit({{ $ticket->id }})"
+                                    class="text-blue-600 text-sm font-medium"
+                                >
+                                    {{ __('Edit') }}
+                                </button>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                            <p class="text-gray-500">{{ __('No trip tickets found.') }}</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="hidden sm:block overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>

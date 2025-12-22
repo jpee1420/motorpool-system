@@ -143,7 +143,43 @@
                 </h2>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="sm:hidden bg-gray-50 p-4 rounded-lg">
+                <div class="space-y-3">
+                    @forelse ($record->materials as $material)
+                        <div class="bg-white rounded-lg shadow-sm p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-base font-semibold text-gray-900">{{ $material->name }}</h3>
+                                    <p class="text-sm text-gray-600 mt-0.5 truncate">{{ $material->unit ?? '—' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 border-t border-gray-100 pt-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ __('Quantity') }}</span>
+                                    <span class="font-medium text-gray-900">
+                                        {{ $material->quantity === null ? '—' : rtrim(rtrim((string) $material->quantity, '0'), '.') }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ __('Cost') }}</span>
+                                    <span class="font-medium text-gray-900">₱{{ number_format($material->unit_cost, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm pt-2 border-t border-gray-100">
+                                    <span class="text-gray-900 font-medium">{{ __('Total cost') }}</span>
+                                    <span class="font-semibold text-gray-900">₱{{ number_format($material->total_cost, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                            <p class="text-gray-500">{{ __('No materials recorded for this repair.') }}</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="hidden sm:block overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>

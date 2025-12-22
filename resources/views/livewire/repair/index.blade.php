@@ -85,7 +85,51 @@
         </div>
 
         <div class="bg-white shadow-sm rounded-xl border border-gray-100 overflow-hidden">
-            <div class="overflow-x-auto">
+            <div class="sm:hidden bg-gray-50 p-4">
+                <div class="space-y-3">
+                    @forelse ($records as $record)
+                        <div class="bg-white rounded-lg shadow-sm p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 class="text-base font-semibold text-gray-900">{{ $record->vehicle?->plate_number ?? '—' }}</h3>
+                                    <p class="text-sm text-gray-600 mt-0.5">{{ optional($record->performed_at)->format('M d, Y') ?? '—' }}</p>
+                                </div>
+                                <a
+                                    href="{{ route('repair.show', $record) }}"
+                                    class="text-blue-600 text-sm font-medium"
+                                >
+                                    {{ __('View') }}
+                                </a>
+                            </div>
+
+                            <div class="space-y-2 border-t border-gray-100 pt-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ __('Odometer') }}</span>
+                                    <span class="font-medium text-gray-900">{{ number_format($record->odometer_reading) }} km</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ __('Labor cost') }}</span>
+                                    <span class="font-medium text-gray-900">₱{{ number_format($record->personnel_labor_cost, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ __('Materials cost') }}</span>
+                                    <span class="font-medium text-gray-900">₱{{ number_format($record->materials_cost_total, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm pt-2 border-t border-gray-100">
+                                    <span class="text-gray-900 font-medium">{{ __('Total cost') }}</span>
+                                    <span class="font-semibold text-gray-900">₱{{ number_format($record->total_cost, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                            <p class="text-gray-500">{{ __('No repair records yet.') }}</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="hidden sm:block overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>

@@ -96,12 +96,196 @@
                 $regularUsers = $collection->filter(fn ($user) => $user->role === 'user');
             @endphp
 
+            <div class="sm:hidden bg-gray-50 p-4 space-y-6">
+                <div>
+                    <h2 class="text-lg font-semibold mb-3 px-1">{{ __('Admins & staff') }}</h2>
+                    <div class="space-y-3">
+                        @forelse ($staffAdmins as $user)
+                            <div class="bg-white rounded-lg shadow-sm p-4">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-base font-semibold text-gray-900">{{ $user->name }}</h3>
+                                        <p class="text-sm text-gray-600 mt-0.5 truncate">{{ $user->email }}</p>
+                                    </div>
+                                    @php
+                                        $statusPillClasses = [
+                                            'pending' => 'bg-yellow-50 text-yellow-700',
+                                            'active' => 'bg-green-50 text-green-700',
+                                            'disabled' => 'bg-red-50 text-red-700',
+                                        ];
+                                        $statusPillClass = $statusPillClasses[$user->status] ?? 'bg-gray-100 text-gray-700';
+                                    @endphp
+                                    <span class="ml-2 px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap {{ $statusPillClass }}">
+                                        {{ ucfirst($user->status) }}
+                                    </span>
+                                </div>
+
+                                <div class="space-y-2 border-t border-gray-100 pt-3">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">{{ __('Role') }}</span>
+                                        <span class="font-medium text-gray-900">{{ ucfirst($user->role) }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">{{ __('Created') }}</span>
+                                        <span class="font-medium text-gray-900">{{ $user->created_at?->format('M d, Y') ?? '—' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+                                    <select
+                                        wire:change="setRole({{ $user->id }}, $event.target.value)"
+                                        class="text-sm border border-gray-300 rounded px-2 py-1.5 text-gray-700"
+                                    >
+                                        <option value="admin" @selected($user->role === 'admin')>{{ __('Admin') }}</option>
+                                        <option value="staff" @selected($user->role === 'staff')>{{ __('Staff') }}</option>
+                                        <option value="user" @selected($user->role === 'user')>{{ __('User') }}</option>
+                                    </select>
+
+                                    @if (auth()->id() !== $user->id)
+                                        @if ($user->status === 'pending')
+                                            <button
+                                                type="button"
+                                                wire:click="confirmApprove({{ $user->id }})"
+                                                class="text-sm border border-gray-300 rounded px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                                            >
+                                                {{ __('Approve') }}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                wire:click="confirmReject({{ $user->id }})"
+                                                class="text-sm border border-gray-300 rounded px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                                            >
+                                                {{ __('Reject') }}
+                                            </button>
+                                        @else
+                                            <button
+                                                type="button"
+                                                wire:click="toggleStatus({{ $user->id }})"
+                                                class="text-sm border border-gray-300 rounded px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                                            >
+                                                @if ($user->status === 'active')
+                                                    {{ __('Disable') }}
+                                                @else
+                                                    {{ __('Activate') }}
+                                                @endif
+                                            </button>
+                                            <button
+                                                type="button"
+                                                wire:click="openPasswordResetModal({{ $user->id }})"
+                                                class="text-sm border border-gray-300 rounded px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                                            >
+                                                {{ __('Reset Password') }}
+                                            </button>
+                                        @endif
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                                <p class="text-gray-500">{{ __('No admins or staff found.') }}</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-lg font-semibold mb-3 px-1">{{ __('Users') }}</h2>
+                    <div class="space-y-3">
+                        @forelse ($regularUsers as $user)
+                            <div class="bg-white rounded-lg shadow-sm p-4">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-base font-semibold text-gray-900">{{ $user->name }}</h3>
+                                        <p class="text-sm text-gray-600 mt-0.5 truncate">{{ $user->email }}</p>
+                                    </div>
+                                    @php
+                                        $statusPillClasses = [
+                                            'pending' => 'bg-yellow-50 text-yellow-700',
+                                            'active' => 'bg-green-50 text-green-700',
+                                            'disabled' => 'bg-red-50 text-red-700',
+                                        ];
+                                        $statusPillClass = $statusPillClasses[$user->status] ?? 'bg-gray-100 text-gray-700';
+                                    @endphp
+                                    <span class="ml-2 px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap {{ $statusPillClass }}">
+                                        {{ ucfirst($user->status) }}
+                                    </span>
+                                </div>
+
+                                <div class="space-y-2 border-t border-gray-100 pt-3">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">{{ __('Role') }}</span>
+                                        <span class="font-medium text-gray-900">{{ ucfirst($user->role) }}</span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">{{ __('Created') }}</span>
+                                        <span class="font-medium text-gray-900">{{ $user->created_at?->format('M d, Y') ?? '—' }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+                                    <select
+                                        wire:change="setRole({{ $user->id }}, $event.target.value)"
+                                        class="text-sm border border-gray-300 rounded px-2 py-1.5 text-gray-700"
+                                    >
+                                        <option value="admin" @selected($user->role === 'admin')>{{ __('Admin') }}</option>
+                                        <option value="staff" @selected($user->role === 'staff')>{{ __('Staff') }}</option>
+                                        <option value="user" @selected($user->role === 'user')>{{ __('User') }}</option>
+                                    </select>
+
+                                    @if (auth()->id() !== $user->id)
+                                        @if ($user->status === 'pending')
+                                            <button
+                                                type="button"
+                                                wire:click="confirmApprove({{ $user->id }})"
+                                                class="text-sm border border-gray-300 rounded px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                                            >
+                                                {{ __('Approve') }}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                wire:click="confirmReject({{ $user->id }})"
+                                                class="text-sm border border-gray-300 rounded px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                                            >
+                                                {{ __('Reject') }}
+                                            </button>
+                                        @else
+                                            <button
+                                                type="button"
+                                                wire:click="toggleStatus({{ $user->id }})"
+                                                class="text-sm border border-gray-300 rounded px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                                            >
+                                                @if ($user->status === 'active')
+                                                    {{ __('Disable') }}
+                                                @else
+                                                    {{ __('Activate') }}
+                                                @endif
+                                            </button>
+                                            <button
+                                                type="button"
+                                                wire:click="openPasswordResetModal({{ $user->id }})"
+                                                class="text-sm border border-gray-300 rounded px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+                                            >
+                                                {{ __('Reset Password') }}
+                                            </button>
+                                        @endif
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                                <p class="text-gray-500">{{ __('No users found.') }}</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
             {{-- Admins & Staff table --}}
             <div class="border-b border-gray-100">
                 <div class="px-4 py-3 bg-gray-50 flex items-center justify-between">
                     <h2 class="text-sm font-semibold text-gray-900">{{ __('Admins & staff') }}</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr>
@@ -253,7 +437,7 @@
                 <div class="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
                     <h2 class="text-sm font-semibold text-gray-900">{{ __('Users') }}</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="hidden sm:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr>

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Livewire\Vehicles;
 
 use App\Exports\VehiclesExport;
+use App\Models\ApprovalRequest;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Services\ApprovalRequestService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
@@ -91,8 +93,6 @@ class Index extends Component
     {
         $user = auth()->user();
         $isStaffOrAbove = $user?->isStaffOrAbove() ?? false;
-        $isAdmin = $user?->isAdmin() ?? false;
-        $isStaff = $user?->isStaff() ?? false;
         $vehicles = $this->getVehicles();
         $drivers = $this->getDrivers();
 
@@ -101,10 +101,8 @@ class Index extends Component
             'drivers' => $drivers,
             'canCreate' => $user?->can('create', Vehicle::class) ?? false,
             'canExport' => $user?->can('export', Vehicle::class) ?? false,
-            'canDelete' => $isAdmin,
+            'canDelete' => $user?->isAdmin() ?? false,
             'isStaffOrAbove' => $isStaffOrAbove,
-            'isAdmin' => $isAdmin,
-            'isStaff' => $isStaff,
         ]);
     }
 
@@ -192,7 +190,7 @@ class Index extends Component
     {
         $vehicle = null;
         $user = auth()->user();
-        $isStaff = $user?->isStaff() ?? false;
+        $isAdmin = $user?->isAdmin() ?? false;
 
         if ($this->editingId) {
             $vehicle = Vehicle::findOrFail($this->editingId);
@@ -203,88 +201,62 @@ class Index extends Component
 
         $this->validate();
 
-        if ($vehicle !== null && $isStaff) {
-            $restrictedFields = [
-                'vehicle_type' => (string) $vehicle->vehicle_type,
-                'plate_number' => (string) $vehicle->plate_number,
-                'chassis_number' => (string) ($vehicle->chassis_number ?? ''),
-                'make' => (string) ($vehicle->make ?? ''),
-                'year' => (string) ($vehicle->year ?? ''),
-                'engine_number' => (string) ($vehicle->engine_number ?? ''),
-            ];
-
-            foreach ($restrictedFields as $field => $originalValue) {
-                $currentValue = (string) ($this->{$field} ?? '');
-                if ($currentValue !== $originalValue) {
-                    $this->addError($field, __('You are not allowed to edit this field.'));
-                }
-            }
-
-            if ($this->photo !== null) {
-                $this->addError('photo', __('You are not allowed to upload or change the vehicle photo.'));
-            }
-
-            if ($this->getErrorBag()->isNotEmpty()) {
-                return;
-            }
-        }
-
         $photoPath = null;
 
-        if ($this->photo && ! $isStaff) {
+        if ($this->photo) {
             $photoPath = $this->photo->store('vehicles', 'public');
         }
 
-        if ($this->editingId) {
-            $oldPhotoPath = $vehicle?->photo_path;
+        $data = [
+            'vehicle_type' => $this->vehicle_type,
+            'plate_number' => $this->plate_number,
+            'chassis_number' => $this->chassis_number,
+            'make' => $this->make,
+            'model' => $this->model,
+            'year' => $this->year,
+            'engine_number' => $this->engine_number,
+            'driver_operator' => $this->driver_operator,
+            'contact_number' => $this->contact_number,
+            'status' => $this->status,
+            'user_id' => $this->assigned_user_id,
+        ];
 
-            $data = [
-                'driver_operator' => $this->driver_operator,
-                'contact_number' => $this->contact_number,
-                'status' => $this->status,
-                'user_id' => $this->assigned_user_id,
-            ];
+        if ($photoPath) {
+            $data['photo_path'] = $photoPath;
+        }
 
-            if (! $isStaff) {
-                $data = array_merge($data, [
-                    'vehicle_type' => $this->vehicle_type,
-                    'plate_number' => $this->plate_number,
-                    'chassis_number' => $this->chassis_number,
-                    'make' => $this->make,
-                    'model' => $this->model,
-                    'year' => $this->year,
-                    'engine_number' => $this->engine_number,
-                ]);
+        if ($isAdmin) {
+            if ($this->editingId) {
+                $oldPhotoPath = $vehicle?->photo_path;
+                $vehicle?->update($data);
+
+                if ($photoPath && $oldPhotoPath && $oldPhotoPath !== $photoPath) {
+                    Storage::disk('public')->delete($oldPhotoPath);
+                }
+
+                session()->flash('success', __('Vehicle updated successfully.'));
+            } else {
+                Vehicle::create($data);
+                session()->flash('success', __('Vehicle created successfully.'));
             }
-
-            if ($photoPath) {
-                $data['photo_path'] = $photoPath;
-            }
-
-            $vehicle?->update($data);
-
-            if ($photoPath && $oldPhotoPath && $oldPhotoPath !== $photoPath) {
-                Storage::disk('public')->delete($oldPhotoPath);
-            }
-
-            session()->flash('success', __('Vehicle updated successfully.'));
         } else {
-            Vehicle::create([
-                'vehicle_type' => $this->vehicle_type,
-                'plate_number' => $this->plate_number,
-                'chassis_number' => $this->chassis_number,
-                'make' => $this->make,
-                'model' => $this->model,
-                'year' => $this->year,
-                'engine_number' => $this->engine_number,
-                'driver_operator' => $this->driver_operator,
-                'contact_number' => $this->contact_number,
-                'status' => $this->status,
-                'photo_path' => $photoPath,
-                'user_id' => $this->assigned_user_id,
+            $originalData = null;
+
+            if ($this->editingId && $vehicle) {
+                $originalData = $vehicle->only(array_keys($data));
+            }
+
+            ApprovalRequest::create([
+                'requester_user_id' => $user->id,
+                'action' => $this->editingId ? ApprovalRequest::ACTION_UPDATE : ApprovalRequest::ACTION_CREATE,
+                'subject_type' => 'Vehicle',
+                'subject_id' => $this->editingId,
+                'subject_label' => $this->plate_number ?: 'New vehicle',
+                'original_data' => $originalData,
+                'proposed_data' => $data,
             ]);
 
-            session()->flash('success', __('Vehicle created successfully.'));
+            session()->flash('success', __('Your submission has been sent for admin approval.'));
         }
 
         $this->resetForm();

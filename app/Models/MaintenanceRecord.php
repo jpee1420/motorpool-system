@@ -21,6 +21,7 @@ class MaintenanceRecord extends Model
         'performed_at',
         'odometer_reading',
         'description_of_work',
+        'checklist',
         'personnel_labor_cost',
         'materials_cost_total',
         'total_cost',
@@ -34,6 +35,7 @@ class MaintenanceRecord extends Model
         return [
             'performed_at' => 'datetime',
             'next_maintenance_due_at' => 'date',
+            'checklist' => 'array',
         ];
     }
 

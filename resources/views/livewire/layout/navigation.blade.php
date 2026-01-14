@@ -72,6 +72,10 @@ new class extends Component
                         <x-nav-link :href="route('account.users')" :active="request()->routeIs('account.users')" wire:navigate>
                             {{ __('Users') }}
                         </x-nav-link>
+
+                        <x-nav-link :href="route('approvals.admin')" :active="request()->routeIs('approvals.admin')" wire:navigate>
+                            {{ __('Approvals') }}
+                        </x-nav-link>
                     @endif
                 </div>
             </div>
@@ -100,6 +104,16 @@ new class extends Component
                         <x-dropdown-link :href="route('profile')" wire:navigate>
                             {{ __('Profile') }}
                         </x-dropdown-link>
+
+                        @if (auth()->user()?->isStaffOrAbove())
+                            <x-dropdown-link :href="route('approvals.staff')" wire:navigate>
+                                {{ __('My submissions') }}
+                            </x-dropdown-link>
+
+                            <x-dropdown-link :href="route('activity-logs.index')" wire:navigate>
+                                {{ __('Activity log') }}
+                            </x-dropdown-link>
+                        @endif
 
                         <!-- Authentication -->
                         <button wire:click="logout" class="w-full text-start">
@@ -165,6 +179,10 @@ new class extends Component
                 <x-responsive-nav-link :href="route('account.users')" :active="request()->routeIs('account.users')" wire:navigate>
                     {{ __('Users') }}
                 </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('approvals.admin')" :active="request()->routeIs('approvals.admin')" wire:navigate>
+                    {{ __('Approvals') }}
+                </x-responsive-nav-link>
             @endif
         </div>
 
@@ -179,6 +197,16 @@ new class extends Component
                 <x-responsive-nav-link :href="route('profile')" wire:navigate>
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
+
+                @if (auth()->user()?->isStaffOrAbove())
+                    <x-responsive-nav-link :href="route('approvals.staff')" wire:navigate>
+                        {{ __('My submissions') }}
+                    </x-responsive-nav-link>
+
+                    <x-responsive-nav-link :href="route('activity-logs.index')" wire:navigate>
+                        {{ __('Activity log') }}
+                    </x-responsive-nav-link>
+                @endif
 
                 <!-- Authentication -->
                 <button wire:click="logout" class="w-full text-start">

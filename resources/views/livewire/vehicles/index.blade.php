@@ -166,7 +166,7 @@
                                     {{ __('History') }}
                                 </a>
 
-                                @if ($isStaffOrAbove)
+                                @if ($canCreate)
                                     <button
                                         type="button"
                                         wire:click="edit({{ $vehicle->id }})"
@@ -195,10 +195,8 @@
                         </div>
                     @empty
                         <div class="px-4 py-6 text-center text-gray-500 text-sm bg-white rounded-lg shadow-sm">
-                            @if ($canCreate)
+                            @if ($isStaffOrAbove)
                                 {{ __('No vehicles found. Add your first vehicle to get started.') }}
-                            @elseif ($isStaffOrAbove)
-                                {{ __('No vehicles found.') }}
                             @else
                                 {{ __('No vehicles have been assigned to you yet.') }}
                             @endif
@@ -317,7 +315,7 @@
                                             {{ __('History') }}
                                         </a>
 
-                                        @if ($isStaffOrAbove)
+                                        @if ($canCreate)
                                             <button
                                                 type="button"
                                                 wire:click="edit({{ $vehicle->id }})"
@@ -349,10 +347,8 @@
                         @empty
                             <tr>
                                 <td colspan="8" class="px-3 py-6 text-center text-gray-500">
-                                    @if ($canCreate)
+                                    @if ($isStaffOrAbove)
                                         {{ __('No vehicles found. Add your first vehicle to get started.') }}
-                                    @elseif ($isStaffOrAbove)
-                                        {{ __('No vehicles found.') }}
                                     @else
                                         {{ __('No vehicles have been assigned to you yet.') }}
                                     @endif
@@ -395,8 +391,7 @@
                             <input
                                 type="text"
                                 wire:model="vehicle_type"
-                                @disabled($isStaff)
-                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('vehicle_type')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -411,8 +406,7 @@
                                 type="text"
                                 wire:model.blur="plate_number"
                                 maxlength="15"
-                                @disabled($isStaff)
-                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm uppercase focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm uppercase focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('plate_number')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -426,8 +420,7 @@
                             <input
                                 type="text"
                                 wire:model="chassis_number"
-                                @disabled($isStaff)
-                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('chassis_number')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -441,8 +434,7 @@
                             <input
                                 type="text"
                                 wire:model="make"
-                                @disabled($isStaff)
-                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('make')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -456,8 +448,7 @@
                             <input
                                 type="number"
                                 wire:model="year"
-                                @disabled($isStaff)
-                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('year')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -471,8 +462,7 @@
                             <input
                                 type="text"
                                 wire:model="engine_number"
-                                @disabled($isStaff)
-                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                                class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                             >
                             @error('engine_number')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -535,8 +525,7 @@
                             <input
                                 type="file"
                                 wire:model="photo"
-                                @disabled($isStaff)
-                                class="mt-1 block w-full text-sm text-gray-900 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 disabled:text-gray-500 disabled:cursor-not-allowed disabled:file:bg-gray-200 disabled:file:text-gray-500 disabled:hover:file:bg-gray-200"
+                                class="mt-1 block w-full text-sm text-gray-900 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100"
                             >
                             @error('photo')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

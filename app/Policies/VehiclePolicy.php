@@ -30,7 +30,7 @@ class VehiclePolicy
      */
     public function create(User $user): bool
     {
-        return $user->isActive() && $user->isAdmin();
+        return $user->isActive() && $user->isStaffOrAbove();
     }
 
     /**

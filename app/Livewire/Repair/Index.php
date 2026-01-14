@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Repair;
 
 use App\Exports\RepairRecordsExport;
+use App\Models\ApprovalRequest;
 use App\Models\RepairMaterial;
 use App\Models\RepairRecord;
 use App\Models\Vehicle;
@@ -127,6 +128,9 @@ class Index extends Component
     {
         $this->authorize('create', RepairRecord::class);
 
+        $user = auth()->user();
+        $isAdmin = $user?->isAdmin() ?? false;
+
         $this->validate();
 
         $performedAt = $this->performed_at
@@ -143,54 +147,72 @@ class Index extends Component
 
         $totalCost = $this->personnel_labor_cost + $materialsCostTotal;
 
-        // Get the vehicle and its currently assigned driver
         $vehicle = Vehicle::find($this->vehicle_id);
         $assignedDriverId = $vehicle?->user_id;
 
-        $record = RepairRecord::create([
+        $data = [
             'vehicle_id' => $this->vehicle_id,
             'assigned_driver_id' => $assignedDriverId,
             'performed_by_user_id' => null,
             'performed_by' => $this->performed_by,
-            'performed_at' => $performedAt,
+            'performed_at' => $performedAt->toDateTimeString(),
             'odometer_reading' => $this->odometer_reading,
             'description_of_work' => $this->description_of_work,
             'personnel_labor_cost' => $this->personnel_labor_cost,
             'materials_cost_total' => $materialsCostTotal,
             'total_cost' => $totalCost,
             'notes' => null,
-        ]);
+        ];
 
-        // Update vehicle's current odometer if this repair reading is higher
-
-        if ($vehicle !== null && $this->odometer_reading > $vehicle->current_odometer) {
-            $vehicle->update(['current_odometer' => $this->odometer_reading]);
-        }
-
+        $materialsData = [];
         foreach ($this->materials as $material) {
             if (! ($material['name'] ?? null)) {
                 continue;
             }
-
             $quantity = (float) ($material['quantity'] ?? 0);
             $unitCost = (float) ($material['unit_cost'] ?? 0);
-
-            RepairMaterial::create([
-                'repair_record_id' => $record->id,
+            $materialsData[] = [
                 'name' => $material['name'],
                 'description' => $material['description'] ?? null,
                 'quantity' => $quantity,
                 'unit' => $material['unit'] ?? null,
                 'unit_cost' => $unitCost,
                 'total_cost' => $quantity * $unitCost,
+            ];
+        }
+
+        if ($isAdmin) {
+            $record = RepairRecord::create($data);
+
+            if ($vehicle !== null && $this->odometer_reading > $vehicle->current_odometer) {
+                $vehicle->update(['current_odometer' => $this->odometer_reading]);
+            }
+
+            foreach ($materialsData as $materialData) {
+                $materialData['repair_record_id'] = $record->id;
+                RepairMaterial::create($materialData);
+            }
+
+            session()->flash('success', __('Repair record created successfully.'));
+        } else {
+            $data['_materials'] = $materialsData;
+
+            ApprovalRequest::create([
+                'requester_user_id' => $user->id,
+                'action' => ApprovalRequest::ACTION_CREATE,
+                'subject_type' => 'RepairRecord',
+                'subject_id' => null,
+                'subject_label' => 'Repair for ' . ($vehicle?->plate_number ?? 'vehicle'),
+                'original_data' => null,
+                'proposed_data' => $data,
             ]);
+
+            session()->flash('success', __('Your submission has been sent for admin approval.'));
         }
 
         $this->resetForm();
         $this->showModal = false;
         $this->resetPage();
-
-        session()->flash('success', __('Repair record created successfully.'));
     }
 
     private function resetForm(): void

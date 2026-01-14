@@ -358,6 +358,75 @@
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <h3 class="text-sm font-semibold text-gray-900">
+                                {{ __('22 Point Checklist') }}
+                            </h3>
+                        </div>
+
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-8">#</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{{ __('Item') }}</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 w-16">{{ __('Good') }}</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 w-16">{{ __('Fair') }}</th>
+                                        <th class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 w-16">{{ __('Bad') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 bg-white">
+                                    @foreach ($checklistItems as $index => $item)
+                                        <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                                            <td class="px-3 py-2 text-gray-500 text-center">{{ $index + 1 }}</td>
+                                            <td class="px-3 py-2 text-gray-900">{{ $item }}</td>
+                                            <td class="px-3 py-2 text-center">
+                                                <button
+                                                    type="button"
+                                                    wire:click="setChecklistStatus('{{ $item }}', 'good')"
+                                                    class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors {{ ($checklist[$item] ?? null) === 'good' ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300 hover:border-green-400' }}"
+                                                >
+                                                    @if (($checklist[$item] ?? null) === 'good')
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    @endif
+                                                </button>
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                <button
+                                                    type="button"
+                                                    wire:click="setChecklistStatus('{{ $item }}', 'fair')"
+                                                    class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors {{ ($checklist[$item] ?? null) === 'fair' ? 'bg-yellow-500 border-yellow-500 text-white' : 'border-gray-300 hover:border-yellow-400' }}"
+                                                >
+                                                    @if (($checklist[$item] ?? null) === 'fair')
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    @endif
+                                                </button>
+                                            </td>
+                                            <td class="px-3 py-2 text-center">
+                                                <button
+                                                    type="button"
+                                                    wire:click="setChecklistStatus('{{ $item }}', 'bad')"
+                                                    class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors {{ ($checklist[$item] ?? null) === 'bad' ? 'bg-red-500 border-red-500 text-white' : 'border-gray-300 hover:border-red-400' }}"
+                                                >
+                                                    @if (($checklist[$item] ?? null) === 'bad')
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    @endif
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-gray-900">
                                 {{ __('Materials used') }}
                             </h3>
                             <button

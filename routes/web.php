@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Livewire\ActivityLogs\Index as ActivityLogsIndex;
+use App\Livewire\Approvals\AdminIndex as ApprovalsAdminIndex;
+use App\Livewire\Approvals\StaffIndex as ApprovalsStaffIndex;
 use App\Livewire\Account\UsersIndex as AccountUsersIndex;
 use App\Livewire\Calendar\Index as CalendarIndex;
 use App\Livewire\Maintenance\Index as MaintenanceIndex;
@@ -66,6 +69,18 @@ Route::get('trip-tickets/{ticket}', TripTicketsShow::class)
 Route::get('account/users', AccountUsersIndex::class)
     ->middleware(['auth'])
     ->name('account.users');
+
+Route::get('activity-logs', ActivityLogsIndex::class)
+    ->middleware(['auth'])
+    ->name('activity-logs.index');
+
+Route::get('approvals', ApprovalsAdminIndex::class)
+    ->middleware(['auth'])
+    ->name('approvals.admin');
+
+Route::get('my-submissions', ApprovalsStaffIndex::class)
+    ->middleware(['auth'])
+    ->name('approvals.staff');
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])

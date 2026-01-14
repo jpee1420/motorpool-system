@@ -148,6 +148,56 @@
             @endif
         </div>
 
+        @if (!empty($record->checklist))
+            <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6">
+                <h2 class="text-sm font-semibold text-gray-900 mb-4">
+                    {{ __('22 Point Checklist') }}
+                </h2>
+
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-8">#</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{{ __('Item') }}</th>
+                                <th class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 w-20">{{ __('Status') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            @php
+                                $checklistItems = \App\Livewire\Maintenance\Index::CHECKLIST_ITEMS;
+                            @endphp
+                            @foreach ($checklistItems as $index => $item)
+                                <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                                    <td class="px-3 py-2 text-gray-500 text-center">{{ $index + 1 }}</td>
+                                    <td class="px-3 py-2 text-gray-900">{{ $item }}</td>
+                                    <td class="px-3 py-2 text-center">
+                                        @php
+                                            $status = $record->checklist[$item] ?? null;
+                                            $statusClasses = [
+                                                'good' => 'bg-green-100 text-green-800',
+                                                'fair' => 'bg-yellow-100 text-yellow-800',
+                                                'bad' => 'bg-red-100 text-red-800',
+                                            ];
+                                        @endphp
+                                        @if ($status)
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusClasses[$status] }}">
+                                                {{ ucfirst($status) }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500">
+                                                Not Checked
+                                            </span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-gray-900">

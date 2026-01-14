@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\TripTickets;
 
 use App\Exports\TripTicketsExport;
+use App\Models\ApprovalRequest;
 use App\Models\NotificationLog;
 use App\Models\TripTicket;
 use App\Models\User;
@@ -100,6 +101,10 @@ class Index extends Component
 
     public function save(): void
     {
+        $user = auth()->user();
+        $isAdmin = $user?->isAdmin() ?? false;
+        $ticket = null;
+
         if ($this->editingId) {
             $ticket = TripTicket::findOrFail($this->editingId);
             $this->authorize('update', $ticket);
@@ -116,26 +121,49 @@ class Index extends Component
             'driver_name' => $this->driver_name ?? '',
             'destination' => $this->destination ?? '',
             'purpose' => $this->purpose ?? '',
-            'departure_at' => $travelDate,
+            'departure_at' => $travelDate->toDateTimeString(),
             'odometer_start' => $this->odometer_start,
             'odometer_end' => $this->odometer_end,
         ];
 
-        if ($this->editingId) {
-            $ticket = TripTicket::findOrFail($this->editingId);
-            $ticket->update($data);
+        if ($isAdmin) {
+            if ($this->editingId) {
+                $ticket->update($data);
+                session()->flash('success', __('Trip ticket updated successfully.'));
+            } else {
+                $newTicket = TripTicket::create(array_merge($data, [
+                    'requested_by_user_id' => Auth::id(),
+                    'status' => 'pending',
+                    'notes' => null,
+                ]));
 
-            session()->flash('success', __('Trip ticket updated successfully.'));
+                $this->logTripTicketNotification($newTicket);
+                session()->flash('success', __('Trip ticket created successfully.'));
+            }
         } else {
-            $ticket = TripTicket::create(array_merge($data, [
-                'requested_by_user_id' => Auth::id(),
-                'status' => 'pending',
-                'notes' => null,
-            ]));
+            $originalData = null;
 
-            $this->logTripTicketNotification($ticket);
+            if ($this->editingId && $ticket) {
+                $originalData = $ticket->only(array_keys($data));
+            }
 
-            session()->flash('success', __('Trip ticket created successfully.'));
+            $vehicle = Vehicle::find($this->vehicle_id);
+
+            ApprovalRequest::create([
+                'requester_user_id' => $user->id,
+                'action' => $this->editingId ? ApprovalRequest::ACTION_UPDATE : ApprovalRequest::ACTION_CREATE,
+                'subject_type' => 'TripTicket',
+                'subject_id' => $this->editingId,
+                'subject_label' => 'Trip to ' . ($this->destination ?? 'destination') . ' (' . ($vehicle?->plate_number ?? 'vehicle') . ')',
+                'original_data' => $originalData,
+                'proposed_data' => array_merge($data, $this->editingId ? [] : [
+                    'requested_by_user_id' => $user->id,
+                    'status' => 'pending',
+                    'notes' => null,
+                ]),
+            ]);
+
+            session()->flash('success', __('Your submission has been sent for admin approval.'));
         }
 
         $this->resetForm();

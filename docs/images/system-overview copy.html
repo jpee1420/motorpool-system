@@ -1,0 +1,227 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Arial, sans-serif">
+  <defs>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F9FAFB;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.1"/>
+    </filter>
+    <filter id="smallShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="800" fill="#F3F4F6"/>
+  
+  <!-- Header -->
+  <rect x="0" y="0" width="1200" height="80" fill="url(#headerGrad)"/>
+  <text x="600" y="50" text-anchor="middle" fill="white" font-size="28" font-weight="bold">Motorpool System Overview</text>
+  
+  <!-- Main Container -->
+  <rect x="40" y="100" width="1120" height="680" rx="16" fill="white" filter="url(#shadow)"/>
+  
+  <!-- Users Section (Left) -->
+  <g transform="translate(60, 130)">
+    <text x="80" y="0" text-anchor="middle" fill="#374151" font-size="16" font-weight="bold">USERS</text>
+    
+    <!-- Admin -->
+    <rect x="0" y="20" width="160" height="80" rx="8" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/>
+    <circle cx="40" cy="60" r="20" fill="#4F46E5"/>
+    <text x="40" y="66" text-anchor="middle" fill="white" font-size="16">👤</text>
+    <text x="100" y="52" text-anchor="middle" fill="#4F46E5" font-size="14" font-weight="bold">Admin</text>
+    <text x="100" y="70" text-anchor="middle" fill="#6B7280" font-size="11">Full Access</text>
+    
+    <!-- Staff -->
+    <rect x="0" y="115" width="160" height="80" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="2"/>
+    <circle cx="40" cy="155" r="20" fill="#F59E0B"/>
+    <text x="40" y="161" text-anchor="middle" fill="white" font-size="16">👤</text>
+    <text x="100" y="147" text-anchor="middle" fill="#B45309" font-size="14" font-weight="bold">Staff</text>
+    <text x="100" y="165" text-anchor="middle" fill="#6B7280" font-size="11">Needs Approval</text>
+    
+    <!-- Driver -->
+    <rect x="0" y="210" width="160" height="80" rx="8" fill="#DCFCE7" stroke="#22C55E" stroke-width="2"/>
+    <circle cx="40" cy="250" r="20" fill="#22C55E"/>
+    <text x="40" y="256" text-anchor="middle" fill="white" font-size="16">👤</text>
+    <text x="100" y="242" text-anchor="middle" fill="#166534" font-size="14" font-weight="bold">Driver</text>
+    <text x="100" y="260" text-anchor="middle" fill="#6B7280" font-size="11">Limited Access</text>
+  </g>
+  
+  <!-- Arrows from Users to Core -->
+  <g stroke="#9CA3AF" stroke-width="2" fill="none">
+    <!-- <path d="M230 190 L300 300" marker-end="url(#arrowhead)"/>
+    <path d="M230 285 L300 340" marker-end="url(#arrowhead)"/>
+    <path d="M230 380 L300 380" marker-end="url(#arrowhead)"/> -->
+    <path d="M230 200 L290 200" marker-end="url(#arrowhead)"/>
+    <path d="M230 290 L290 290" marker-end="url(#arrowhead)"/>
+    <path d="M230 380 L290 380" marker-end="url(#arrowhead)"/>
+  </g>
+  
+  <!-- Arrow marker -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+  
+  <!-- Core Modules (Center) -->
+  <g transform="translate(300, 130)">
+    <text x="250" y="0" text-anchor="middle" fill="#374151" font-size="16" font-weight="bold">CORE MODULES</text>
+    
+    <!-- Dashboard -->
+    <rect x="0" y="20" width="150" height="70" rx="8" fill="url(#cardGrad)" stroke="#E5E7EB" stroke-width="1" filter="url(#smallShadow)"/>
+    <rect x="0" y="20" width="150" height="6" rx="8" fill="#4F46E5"/>
+    <text x="75" y="58" text-anchor="middle" fill="#374151" font-size="13" font-weight="bold">📊 Dashboard</text>
+    <text x="75" y="76" text-anchor="middle" fill="#6B7280" font-size="10">KPIs &amp; Overview</text>
+    
+    <!-- Vehicles -->
+    <rect x="170" y="20" width="150" height="70" rx="8" fill="url(#cardGrad)" stroke="#E5E7EB" stroke-width="1" filter="url(#smallShadow)"/>
+    <rect x="170" y="20" width="150" height="6" rx="8" fill="#3B82F6"/>
+    <text x="245" y="58" text-anchor="middle" fill="#374151" font-size="13" font-weight="bold">🚗 Vehicles</text>
+    <text x="245" y="76" text-anchor="middle" fill="#6B7280" font-size="10">Fleet Management</text>
+    
+    <!-- Maintenance -->
+    <rect x="340" y="20" width="150" height="70" rx="8" fill="url(#cardGrad)" stroke="#E5E7EB" stroke-width="1" filter="url(#smallShadow)"/>
+    <rect x="340" y="20" width="150" height="6" rx="8" fill="#10B981"/>
+    <text x="415" y="58" text-anchor="middle" fill="#374151" font-size="13" font-weight="bold">🔧 Maintenance</text>
+    <text x="415" y="76" text-anchor="middle" fill="#6B7280" font-size="10">22-Point Checklist</text>
+    
+    <!-- Repair -->
+    <rect x="0" y="110" width="150" height="70" rx="8" fill="url(#cardGrad)" stroke="#E5E7EB" stroke-width="1" filter="url(#smallShadow)"/>
+    <rect x="0" y="110" width="150" height="6" rx="8" fill="#EF4444"/>
+    <text x="75" y="148" text-anchor="middle" fill="#374151" font-size="13" font-weight="bold">🛠️ Repair</text>
+    <text x="75" y="166" text-anchor="middle" fill="#6B7280" font-size="10">Unscheduled Fixes</text>
+    
+    <!-- Trip Tickets -->
+    <rect x="170" y="110" width="150" height="70" rx="8" fill="url(#cardGrad)" stroke="#E5E7EB" stroke-width="1" filter="url(#smallShadow)"/>
+    <rect x="170" y="110" width="150" height="6" rx="8" fill="#8B5CF6"/>
+    <text x="245" y="148" text-anchor="middle" fill="#374151" font-size="13" font-weight="bold">🎫 Trip Tickets</text>
+    <text x="245" y="166" text-anchor="middle" fill="#6B7280" font-size="10">Vehicle Usage</text>
+    
+    <!-- Calendar -->
+    <rect x="340" y="110" width="150" height="70" rx="8" fill="url(#cardGrad)" stroke="#E5E7EB" stroke-width="1" filter="url(#smallShadow)"/>
+    <rect x="340" y="110" width="150" height="6" rx="8" fill="#F59E0B"/>
+    <text x="415" y="148" text-anchor="middle" fill="#374151" font-size="13" font-weight="bold">📅 Calendar</text>
+    <text x="415" y="166" text-anchor="middle" fill="#6B7280" font-size="10">Schedule View</text>
+    
+    <!-- Notifications -->
+    <rect x="85" y="200" width="150" height="70" rx="8" fill="url(#cardGrad)" stroke="#E5E7EB" stroke-width="1" filter="url(#smallShadow)"/>
+    <rect x="85" y="200" width="150" height="6" rx="8" fill="#EC4899"/>
+    <text x="160" y="238" text-anchor="middle" fill="#374151" font-size="13" font-weight="bold">🔔 Notifications</text>
+    <text x="160" y="256" text-anchor="middle" fill="#6B7280" font-size="10">Email Alerts</text>
+    
+    <!-- Approvals -->
+    <rect x="255" y="200" width="150" height="70" rx="8" fill="url(#cardGrad)" stroke="#E5E7EB" stroke-width="1" filter="url(#smallShadow)"/>
+    <rect x="255" y="200" width="150" height="6" rx="8" fill="#14B8A6"/>
+    <text x="330" y="238" text-anchor="middle" fill="#374151" font-size="13" font-weight="bold">✅ Approvals</text>
+    <text x="330" y="256" text-anchor="middle" fill="#6B7280" font-size="10">Workflow Review</text>
+  </g>
+  
+  <!-- Admin Features (Right) -->
+  <g transform="translate(840, 130)">
+    <text x="140" y="0" text-anchor="middle" fill="#374151" font-size="16" font-weight="bold">ADMIN FEATURES</text>
+    
+    <!-- User Management -->
+    <rect x="0" y="20" width="280" height="70" rx="8" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
+    <circle cx="40" cy="55" r="22" fill="#EF4444"/>
+    <text x="40" y="61" text-anchor="middle" fill="white" font-size="18">👥</text>
+    <text x="170" y="48" text-anchor="middle" fill="#991B1B" font-size="14" font-weight="bold">User Management</text>
+    <text x="170" y="68" text-anchor="middle" fill="#6B7280" font-size="11">Create, Approve, Reset Password</text>
+    
+    <!-- Activity Logs -->
+    <rect x="0" y="105" width="280" height="70" rx="8" fill="#F0FDF4" stroke="#22C55E" stroke-width="2"/>
+    <circle cx="40" cy="140" r="22" fill="#22C55E"/>
+    <text x="40" y="146" text-anchor="middle" fill="white" font-size="18">📋</text>
+    <text x="170" y="133" text-anchor="middle" fill="#166534" font-size="14" font-weight="bold">Activity Logs</text>
+    <text x="170" y="153" text-anchor="middle" fill="#6B7280" font-size="11">Audit Trail &amp; History</text>
+    
+    <!-- Export -->
+    <rect x="0" y="190" width="280" height="70" rx="8" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
+    <circle cx="40" cy="225" r="22" fill="#3B82F6"/>
+    <text x="40" y="231" text-anchor="middle" fill="white" font-size="18">📥</text>
+    <text x="170" y="218" text-anchor="middle" fill="#1E40AF" font-size="14" font-weight="bold">Data Export</text>
+    <text x="170" y="238" text-anchor="middle" fill="#6B7280" font-size="11">CSV &amp; Excel Reports</text>
+  </g>
+  
+  <!-- Arrows from Core to Admin -->
+  <g stroke="#9CA3AF" stroke-width="2" fill="none">
+    <path d="M800 200 L830 200"/>
+    <path d="M800 280 L830 280"/>
+    <path d="M800 360 L830 360"/>
+  </g>
+  
+  <!-- Database Section (Bottom) -->
+  <g transform="translate(300, 450)">
+    <text x="250" y="0" text-anchor="middle" fill="#374151" font-size="16" font-weight="bold">DATA LAYER</text>
+    
+    <!-- Database Icon -->
+    <rect x="150" y="20" width="200" height="100" rx="12" fill="#1F2937" filter="url(#shadow)"/>
+    <ellipse cx="250" cy="45" rx="80" ry="15" fill="#374151"/>
+    <rect x="170" y="45" width="160" height="55" fill="#1F2937"/>
+    <ellipse cx="250" cy="100" rx="80" ry="15" fill="#374151"/>
+    <ellipse cx="250" cy="45" rx="80" ry="15" fill="none" stroke="#4B5563" stroke-width="2"/>
+    <text x="250" y="78" text-anchor="middle" fill="#9CA3AF" font-size="14" font-weight="bold">MySQL Database</text>
+    
+    <!-- Data entities -->
+    <g transform="translate(-150, 140)">
+      <rect x="0" y="0" width="100" height="40" rx="6" fill="#E5E7EB"/>
+      <text x="50" y="25" text-anchor="middle" fill="#374151" font-size="11">Vehicles</text>
+    </g>
+    <g transform="translate(-30, 140)">
+      <rect x="0" y="0" width="100" height="40" rx="6" fill="#E5E7EB"/>
+      <text x="50" y="25" text-anchor="middle" fill="#374151" font-size="11">Maintenance</text>
+    </g>
+    <g transform="translate(90, 140)">
+      <rect x="0" y="0" width="100" height="40" rx="6" fill="#E5E7EB"/>
+      <text x="50" y="25" text-anchor="middle" fill="#374151" font-size="11">Repairs</text>
+    </g>
+    <g transform="translate(210, 140)">
+      <rect x="0" y="0" width="100" height="40" rx="6" fill="#E5E7EB"/>
+      <text x="50" y="25" text-anchor="middle" fill="#374151" font-size="11">Trip Tickets</text>
+    </g>
+    <g transform="translate(330, 140)">
+      <rect x="0" y="0" width="100" height="40" rx="6" fill="#E5E7EB"/>
+      <text x="50" y="25" text-anchor="middle" fill="#374151" font-size="11">Users</text>
+    </g>
+    <g transform="translate(450, 140)">
+      <rect x="0" y="0" width="100" height="40" rx="6" fill="#E5E7EB"/>
+      <text x="50" y="25" text-anchor="middle" fill="#374151" font-size="11">Notifications</text>
+    </g>
+  </g>
+  
+  <!-- Vertical arrows to database -->
+  <g stroke="#9CA3AF" stroke-width="2" fill="none" stroke-dasharray="5,5">
+    <path d="M550 420 L550 470"/>
+  </g>
+  
+  <!-- Tech Stack Badge -->
+  <g transform="translate(880, 500)">
+    <rect x="0" y="0" width="260" height="140" rx="12" fill="#F9FAFB" stroke="#E5E7EB" stroke-width="2"/>
+    <text x="130" y="25" text-anchor="middle" fill="#374151" font-size="14" font-weight="bold">Tech Stack</text>
+    <line x1="20" y1="35" x2="240" y2="35" stroke="#E5E7EB" stroke-width="1"/>
+    
+    <text x="20" y="58" fill="#6B7280" font-size="12">• Laravel 12 + PHP 8.2</text>
+    <text x="20" y="78" fill="#6B7280" font-size="12">• Livewire 3.6 + Alpine.js</text>
+    <text x="20" y="98" fill="#6B7280" font-size="12">• TailwindCSS</text>
+    <text x="20" y="118" fill="#6B7280" font-size="12">• MySQL Database</text>
+  </g>
+  
+  <!-- Legend -->
+  <g transform="translate(60, 680)">
+    <text x="0" y="0" fill="#374151" font-size="12" font-weight="bold">Legend:</text>
+    <rect x="70" y="-12" width="16" height="16" rx="3" fill="#4F46E5"/>
+    <text x="92" y="0" fill="#6B7280" font-size="11">Admin Only</text>
+    <rect x="170" y="-12" width="16" height="16" rx="3" fill="#F59E0B"/>
+    <text x="192" y="0" fill="#6B7280" font-size="11">Requires Approval</text>
+    <rect x="300" y="-12" width="16" height="16" rx="3" fill="#22C55E"/>
+    <text x="322" y="0" fill="#6B7280" font-size="11">All Users</text>
+  </g>
+  
+  <!-- Version -->
+  <text x="1140" y="770" text-anchor="end" fill="#9CA3AF" font-size="11">v1.0 | January 2026</text>
+</svg>

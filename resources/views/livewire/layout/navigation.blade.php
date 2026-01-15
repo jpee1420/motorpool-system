@@ -69,12 +69,12 @@ new class extends Component
                     @endif
 
                     @if (auth()->user()?->isAdmin())
-                        <x-nav-link :href="route('account.users')" :active="request()->routeIs('account.users')" wire:navigate>
-                            {{ __('Users') }}
-                        </x-nav-link>
-
                         <x-nav-link :href="route('approvals.admin')" :active="request()->routeIs('approvals.admin')" wire:navigate>
                             {{ __('Approvals') }}
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('account.users')" :active="request()->routeIs('account.users')" wire:navigate>
+                            {{ __('Users') }}
                         </x-nav-link>
                     @endif
                 </div>

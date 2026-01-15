@@ -74,13 +74,13 @@ The **Motorpool System** is a comprehensive web-based application designed to ma
 - **Repair Records** – Document repair work and associated costs
 - **Trip Tickets** – Manage vehicle trip requests and tracking
 - **Calendar View** – Visual overview of maintenance schedules and trips
-- **Automated Notifications** – Email alerts for upcoming maintenance
+- **Automated Notifications** – Notification alerts for upcoming maintenance
 - **Approval Workflow** – Staff submissions require admin approval
 - **Export Capabilities** – Export data to CSV and Excel formats
 - **Activity Logging** – Track all system activities for audit purposes
 
-![System Overview](./images/system-overview.svg)
-*Figure 1.1: Motorpool System Overview*
+<!-- ![System Overview](./images/system-overview.svg)
+*Figure 1.1: Motorpool System Overview* -->
 
 ---
 
@@ -167,18 +167,6 @@ The Dashboard provides an at-a-glance overview of your motorpool system. The inf
 
 ![Dashboard](./images/placeholder-dashboard.png)
 *Figure 3.1: Dashboard Overview*
-
-### Dashboard Cards
-
-| Card | Description |
-|------|-------------|
-| Total Vehicles | Count of all registered vehicles |
-| Maintenance Records | Total number of maintenance entries |
-| Upcoming Maintenance | Vehicles with maintenance due in the future |
-| Overdue Maintenance | Vehicles past their scheduled maintenance date |
-
-![Dashboard Cards](./images/placeholder-dashboard-cards.png)
-*Figure 3.2: Dashboard Summary Cards*
 
 ---
 

@@ -3,6 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\RepairRecord;
+use App\Models\Vehicle;
+use App\Models\TripTicket;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -18,8 +21,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(30)->create();
-        User::factory(10)->create(['role' => User::ROLE_ADMIN]);
-
-
+        // Vehicle::factory()->count(10)->create();
+        // RepairRecord::factory()->count(50)->create();
+        TripTicket::factory()->count(10)->create();
     }
 }

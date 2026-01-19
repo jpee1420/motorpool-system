@@ -22,7 +22,6 @@ final class MaintenanceNotificationService
         $today = Carbon::today();
         $daysBeforeDue = (int) config('motorpool.notifications.days_before_due', 7);
         $cooldownHours = (int) config('motorpool.notifications.cooldown_hours', 24);
-        $channels = (array) config('motorpool.notifications.channels', ['email', 'in_app']);
 
         $upcomingDate = $today->copy()->addDays($daysBeforeDue);
 
@@ -90,13 +89,14 @@ final class MaintenanceNotificationService
                 ->latest('performed_at')
                 ->first();
 
-            foreach ($channels as $channel) {
+            foreach ($notifiableUsers as $user) {
                 $existingLog = NotificationLog::query()
                     ->where('vehicle_id', $vehicle->id)
-                    ->where('channel', $channel)
+                    ->where('user_id', $user->id)
+                    ->where('channel', NotificationLog::CHANNEL_IN_APP)
                     ->where('type', $type)
                     ->where('created_at', '>=', now()->subHours($cooldownHours))
-                    ->whereIn('status', [NotificationLog::STATUS_PENDING, NotificationLog::STATUS_SENT])
+                    ->where('status', NotificationLog::STATUS_SENT)
                     ->exists();
 
                 if ($existingLog) {
@@ -104,37 +104,23 @@ final class MaintenanceNotificationService
                     continue;
                 }
 
-                $logData = [
+                NotificationLog::create([
                     'vehicle_id' => $vehicle->id,
                     'maintenance_record_id' => $latestRecord?->id,
-                    'channel' => $channel,
+                    'user_id' => $user->id,
+                    'channel' => NotificationLog::CHANNEL_IN_APP,
                     'type' => $type,
                     'trigger_reason' => $triggerReason,
                     'meta' => $meta,
+                    'recipient_name' => $user->name,
+                    'recipient_contact' => null,
                     'sent_at' => now(),
-                    'status' => NotificationLog::STATUS_PENDING,
+                    'status' => NotificationLog::STATUS_SENT,
                     'error_message' => null,
                     'retry_count' => 0,
                     'max_retries_reached' => false,
-                ];
-
-                if ($channel === NotificationLog::CHANNEL_EMAIL) {
-                    NotificationLog::create(array_merge($logData, [
-                        'recipient_name' => $vehicle->driver_operator ?? '',
-                        'recipient_contact' => $vehicle->contact_number ?? '',
-                    ]));
-                    $createdLogs++;
-                } elseif ($channel === NotificationLog::CHANNEL_IN_APP) {
-                    foreach ($notifiableUsers as $user) {
-                        NotificationLog::create(array_merge($logData, [
-                            'user_id' => $user->id,
-                            'recipient_name' => $user->name,
-                            'recipient_contact' => null,
-                            'status' => NotificationLog::STATUS_SENT,
-                        ]));
-                        $createdLogs++;
-                    }
-                }
+                ]);
+                $createdLogs++;
             }
         }
 

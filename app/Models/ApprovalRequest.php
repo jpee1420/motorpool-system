@@ -14,6 +14,7 @@ class ApprovalRequest extends Model
 
     public const ACTION_CREATE = 'create';
     public const ACTION_UPDATE = 'update';
+    public const ACTION_CANCEL = 'cancel';
 
     public const STATUS_PENDING = 'pending';
     public const STATUS_APPROVED = 'approved';

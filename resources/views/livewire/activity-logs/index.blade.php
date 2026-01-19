@@ -81,6 +81,11 @@
                         <option value="">{{ __('All') }}</option>
                         <option value="created">{{ __('Created') }}</option>
                         <option value="updated">{{ __('Updated') }}</option>
+                        <option value="approved">{{ __('Approved') }}</option>
+                        <option value="rejected">{{ __('Rejected') }}</option>
+                        <option value="approval_request">{{ __('Approval Request') }}</option>
+                        <option value="cancelled">{{ __('Cancelled') }}</option>
+                        <option value="deleted">{{ __('Deleted') }}</option>
                     </select>
                 </div>
 
@@ -167,11 +172,16 @@
                                         $actionClasses = [
                                             'created' => 'bg-green-100 text-green-800',
                                             'updated' => 'bg-amber-100 text-amber-800',
+                                            'approved' => 'bg-blue-100 text-blue-800',
+                                            'rejected' => 'bg-red-100 text-red-800',
+                                            'approval_request' => 'bg-indigo-100 text-indigo-800',
+                                            'cancelled' => 'bg-rose-100 text-rose-800',
+                                            'deleted' => 'bg-gray-200 text-gray-800',
                                         ];
                                         $actionClass = $actionClasses[$log->action] ?? 'bg-gray-100 text-gray-800';
                                     @endphp
                                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $actionClass }}">
-                                        {{ ucfirst($log->action) }}
+                                        {{ ucfirst(str_replace('_', ' ', $log->action)) }}
                                     </span>
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap text-gray-700">
@@ -230,7 +240,7 @@
                                         <span class="text-gray-300">•</span>
                                         {{ $selectedLog->actor?->name ?? '—' }}
                                         <span class="text-gray-300">•</span>
-                                        {{ ucfirst($selectedLog->action) }}
+                                        {{ ucfirst(str_replace('_', ' ', $selectedLog->action)) }}
                                         <span class="text-gray-300">•</span>
                                         {{ $selectedLog->subject_label ?? '—' }}
                                     </p>
@@ -274,7 +284,7 @@
                                                     </div>
                                                 @endforeach
                                             @endif
-                                        @elseif ($selectedLog->action === 'updated')
+                                        @elseif (in_array($selectedLog->action, ['updated', 'approved', 'rejected', 'approval_request', 'cancelled'], true))
                                             @if (empty($new))
                                                 <div class="p-4 text-sm text-gray-500">—</div>
                                             @else
@@ -289,6 +299,19 @@
                                                         </div>
                                                         <div class="col-span-1 text-center text-gray-400">→</div>
                                                         <div class="col-span-4 text-gray-900 break-words">
+                                                            {{ is_array($value) ? json_encode($value) : (string) $value }}
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            @endif
+                                        @elseif ($selectedLog->action === 'deleted')
+                                            @if (empty($old))
+                                                <div class="p-4 text-sm text-gray-500">—</div>
+                                            @else
+                                                @foreach ($old as $key => $value)
+                                                    <div class="grid grid-cols-12 gap-3 p-4 text-sm">
+                                                        <div class="col-span-4 font-medium text-gray-700 break-words">{{ $key }}</div>
+                                                        <div class="col-span-8 text-gray-900 break-words">
                                                             {{ is_array($value) ? json_encode($value) : (string) $value }}
                                                         </div>
                                                     </div>

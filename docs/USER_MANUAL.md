@@ -37,14 +37,15 @@
    - [Editing a Trip Ticket](#73-editing-a-trip-ticket)
    - [Viewing Trip Ticket Details](#74-viewing-trip-ticket-details)
    - [Exporting Trip Tickets](#75-exporting-trip-tickets)
+   - [Cancelling a Trip Ticket](#76-cancelling-a-trip-ticket)
 8. [Calendar](#8-calendar)
    - [Calendar View](#81-calendar-view)
    - [List View](#82-list-view)
    - [Navigating the Calendar](#83-navigating-the-calendar)
 9. [Notifications](#9-notifications)
-   - [Viewing Notification Logs](#91-viewing-notification-logs)
+   - [Viewing Notifications](#91-viewing-notifications)
    - [Filtering Notifications](#92-filtering-notifications)
-   - [Retrying Failed Notifications](#93-retrying-failed-notifications)
+   - [Marking Notifications as Read](#93-marking-notifications-as-read)
    - [Archiving Notifications](#94-archiving-notifications)
 10. [Approval Workflow](#10-approval-workflow)
     - [For Staff Users](#101-for-staff-users)
@@ -74,7 +75,7 @@ The **Motorpool System** is a comprehensive web-based application designed to ma
 - **Repair Records** – Document repair work and associated costs
 - **Trip Tickets** – Manage vehicle trip requests and tracking
 - **Calendar View** – Visual overview of maintenance schedules and trips
-- **Automated Notifications** – Notification alerts for upcoming maintenance
+- **Automated Notifications** – In-app notification alerts for upcoming maintenance
 - **Approval Workflow** – Staff submissions require admin approval
 - **Export Capabilities** – Export data to CSV and Excel formats
 - **Activity Logging** – Track all system activities for audit purposes
@@ -264,6 +265,7 @@ Access maintenance records from the main navigation menu.
 **Features:**
 
 - **Filter by Vehicle** – Select a specific vehicle
+- **Run Maintenance Check (Staff/Admin)** – Generate in-app maintenance notifications (button next to the vehicle filter)
 - **Sort** – Sort by date, odometer, or cost
 - **Pagination** – Navigate through records
 
@@ -421,6 +423,8 @@ Access trip tickets from the main navigation menu.
 - **Filter by Status** – Pending, Approved, Completed, Cancelled
 - **Search** – Search by destination or driver name
 - **Pagination** – Navigate through records
+- **Departure Date** – Only the date is displayed (no time)
+- **Cancel Action** – Available for trips that are not yet Completed/Cancelled
 
 ![Trip Tickets List](./images/placeholder-trip-tickets-list.png)
 *Figure 7.1: Trip Tickets List*
@@ -469,6 +473,27 @@ Export trip tickets to CSV or Excel format.
 ![Export Trip Tickets](./images/placeholder-export-trip-tickets.png)
 *Figure 7.5: Export Trip Tickets*
 
+### 7.6 Cancelling a Trip Ticket
+
+Trip tickets can be cancelled depending on your role.
+
+**For Administrators:**
+
+1. Go to **Trip tickets**
+2. Click **Cancel** on the trip ticket row
+3. Confirm in the cancellation dialog
+4. The trip ticket status becomes **Cancelled** immediately
+
+**For Staff Users:**
+
+1. Go to **Trip tickets**
+2. Click **Cancel** on the trip ticket row
+3. Confirm in the cancellation dialog
+4. A **cancellation request** is submitted for admin approval
+5. Once approved by an administrator, the trip ticket status becomes **Cancelled**
+
+> **Note:** Completed trips cannot be cancelled.
+
 ---
 
 ## 8. Calendar
@@ -496,68 +521,57 @@ Switch to list view for a tabular display of events.
 ![List View](./images/placeholder-calendar-list.png)
 *Figure 8.2: Calendar List View*
 
-### 8.3 Navigating the Calendar
-
-- **Previous Month** – Click the left arrow
-- **Next Month** – Click the right arrow
-- **Today** – Click the "Today" button to return to current month
-- **Toggle View** – Switch between Calendar and List views
-
-![Calendar Navigation](./images/placeholder-calendar-navigation.png)
-*Figure 8.3: Calendar Navigation Controls*
-
 ---
 
 ## 9. Notifications
 
-The Notifications module tracks all system notifications sent for maintenance reminders.
+The Notifications module tracks in-app notifications for staff and administrators, including maintenance reminder notifications.
 
-### 9.1 Viewing Notification Logs
+### 9.1 Viewing Notifications
 
 Access notifications from the main navigation menu.
 
 **Information Displayed:**
 
-- Recipient name and email
-- Notification type
-- Channel (Email)
-- Status (Sent, Failed, Pending)
-- Sent date and time
+- Recipient name
+- Notification type and severity
+- Trigger and due information
+- Read status
+- Created date and time
 
 ![Notifications List](./images/placeholder-notifications-list.png)
-*Figure 9.1: Notification Logs*
+*Figure 9.1: Notifications*
 
 ### 9.2 Filtering Notifications
 
 Filter notifications by:
 
-- **Status** – Sent, Failed, Pending
-- **Channel** – Email
+- **Read** – Unread or Read
 - **Type** – Maintenance due, etc.
 - **Date Range** – From and To dates
 - **Search** – Search by recipient
+- **Scope** – Active, Archived, or All
 
 ![Filter Notifications](./images/placeholder-filter-notifications.png)
 *Figure 9.2: Notification Filters*
 
-### 9.3 Retrying Failed Notifications
+### 9.3 Marking Notifications as Read
 
-For failed notifications:
+Unread notifications are highlighted and can be marked as read.
 
-1. Find the failed notification
-2. Click **"Retry"**
-3. The system will attempt to resend
+1. Find an unread notification
+2. Click the checkmark action to mark it as read
 
-![Retry Notification](./images/placeholder-retry-notification.png)
-*Figure 9.3: Retry Failed Notification*
+![Retry Notification](./images/placeholder-read-notification.png)
+*Figure 9.3: Mark Notification as Read*
 
 ### 9.4 Archiving Notifications
 
 Archive old notifications to keep the list clean:
 
 1. Select notifications using checkboxes
-2. Click **"Archive Selected"**
-3. Toggle the archive filter to view archived items
+2. Click **"Archive"**
+3. Toggle the scope filter to view archived items
 
 ![Archive Notifications](./images/placeholder-archive-notifications.png)
 *Figure 9.4: Archive Notifications*
@@ -587,6 +601,8 @@ Your submission is sent for approval instead of being saved directly.
    - **Approved** – Accepted and applied
    - **Rejected** – Declined with notes
 
+> **Note:** The **"My submissions"** menu is available to Staff accounts only.
+
 ![Staff Submissions](./images/placeholder-staff-submissions.png)
 *Figure 10.1: My Submissions Page*
 
@@ -603,6 +619,8 @@ Administrators can review and process pending submissions.
    - **"Reject"** – Decline the submission
 4. (Optional) Add review notes
 5. Confirm your decision
+
+> **Tip:** Staff cancellation requests for trip tickets also appear here.
 
 **Filters Available:**
 
@@ -686,7 +704,7 @@ The Activity Logs module tracks all significant actions in the system for audit 
 **Information Tracked:**
 
 - **User** – Who performed the action
-- **Action** – Create, Update, Delete, etc.
+- **Action** – Created, Updated, Approved, Rejected, Approval Request, Cancelled, Deleted
 - **Subject** – What was affected (Vehicle, Maintenance, etc.)
 - **Timestamp** – When the action occurred
 - **Details** – Before and after values
@@ -761,7 +779,7 @@ The system has three user roles with different access levels:
 | View Repairs | ✅ All | ✅ All | ✅ Assigned vehicles |
 | Add Repairs | ✅ Direct | ⏳ Approval | ❌ No |
 | View Trip Tickets | ✅ All | ✅ All | ✅ Own requests |
-| Create Trip Tickets | ✅ Direct | ⏳ Approval | ⏳ Approval |
+| Create Trip Tickets | ✅ Direct | ⏳ Approval | ❌ No |
 | View Calendar | ✅ Yes | ✅ Yes | ✅ Yes |
 | View Notifications | ✅ Yes | ✅ Yes | ❌ No |
 | Manage Approvals | ✅ Yes | ❌ No | ❌ No |
@@ -812,9 +830,6 @@ The system has three user roles with different access levels:
 | Slow connection | Check internet connection and try refreshing |
 | Session expired | Log in again |
 | Server error | Contact system administrator |
-
-![Troubleshooting](./images/placeholder-troubleshooting.png)
-*Figure 15.1: Troubleshooting Guide*
 
 ### Getting Help
 

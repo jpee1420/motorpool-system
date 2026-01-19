@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace App\Livewire\Notifications;
 
 use App\Exports\NotificationLogsExport;
-use App\Jobs\SendMaintenanceNotificationJob;
 use App\Models\NotificationLog;
-use App\Services\MaintenanceNotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -21,8 +20,7 @@ class Index extends Component
 {
     use WithPagination;
 
-    public ?string $status = null;
-    public ?string $channel = null;
+    public ?string $read = null;
     public ?string $type = null;
     public ?string $search = null;
     public ?string $fromDate = null;
@@ -43,8 +41,7 @@ class Index extends Component
     protected function queryString(): array
     {
         return [
-            'status' => ['except' => null],
-            'channel' => ['except' => null],
+            'read' => ['except' => null],
             'type' => ['except' => null],
             'search' => ['except' => null],
             'fromDate' => ['except' => null],
@@ -54,12 +51,7 @@ class Index extends Component
         ];
     }
 
-    public function updatingStatus(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatingChannel(): void
+    public function updatingRead(): void
     {
         $this->resetPage();
     }
@@ -94,17 +86,17 @@ class Index extends Component
     {
         return view('livewire.notifications.index', [
             'logs' => $this->getLogs(),
-            'statusCounts' => $this->getStatusCounts(),
+            'readCounts' => $this->getReadCounts(),
             'metrics' => $this->getMetrics(),
         ]);
     }
 
     /**
-     * Quick filter: set status.
+     * Quick filter: set read status.
      */
-    public function filterStatus(?string $status): void
+    public function filterRead(?string $read): void
     {
-        $this->status = $status;
+        $this->read = $read;
         $this->resetPage();
     }
 
@@ -123,22 +115,8 @@ class Index extends Component
      */
     public function clearFilters(): void
     {
-        $this->reset(['status', 'channel', 'type', 'search', 'fromDate', 'toDate']);
+        $this->reset(['read', 'type', 'search', 'fromDate', 'toDate']);
         $this->resetPage();
-    }
-
-    public function runMaintenanceCheck(MaintenanceNotificationService $service): void
-    {
-        $result = $service->run();
-
-        session()->flash('success', __(
-            'Maintenance check completed. Vehicles checked: :vehicles, notifications created: :created, duplicates skipped: :skipped',
-            [
-                'vehicles' => $result['vehicles_checked'],
-                'created' => $result['created_logs'],
-                'skipped' => $result['skipped_duplicates'],
-            ],
-        ));
     }
 
     /**
@@ -147,14 +125,17 @@ class Index extends Component
     public function exportCsv(): StreamedResponse
     {
         $logs = $this->buildBaseQuery()
-            ->when($this->status, function ($query): void {
-                $query->where('status', $this->status);
-            })
-            ->when($this->channel, function ($query): void {
-                $query->where('channel', $this->channel);
-            })
             ->when($this->type, function ($query): void {
                 $query->where('type', $this->type);
+            })
+            ->when($this->read, function ($query): void {
+                if ($this->read === 'unread') {
+                    $query->whereNull('read_at');
+                }
+
+                if ($this->read === 'read') {
+                    $query->whereNotNull('read_at');
+                }
             })
             ->when($this->search, function ($query): void {
                 $search = '%' . $this->search . '%';
@@ -162,7 +143,6 @@ class Index extends Component
                 $query->where(function ($subQuery) use ($search): void {
                     $subQuery
                         ->where('recipient_name', 'like', $search)
-                        ->orWhere('recipient_contact', 'like', $search)
                         ->orWhereHas('vehicle', function ($vehicleQuery) use ($search): void {
                             $vehicleQuery->where('plate_number', 'like', $search);
                         });
@@ -229,14 +209,17 @@ class Index extends Component
     public function exportExcel(): BinaryFileResponse
     {
         $logs = $this->buildBaseQuery()
-            ->when($this->status, function ($query): void {
-                $query->where('status', $this->status);
-            })
-            ->when($this->channel, function ($query): void {
-                $query->where('channel', $this->channel);
-            })
             ->when($this->type, function ($query): void {
                 $query->where('type', $this->type);
+            })
+            ->when($this->read, function ($query): void {
+                if ($this->read === 'unread') {
+                    $query->whereNull('read_at');
+                }
+
+                if ($this->read === 'read') {
+                    $query->whereNotNull('read_at');
+                }
             })
             ->when($this->search, function ($query): void {
                 $search = '%' . $this->search . '%';
@@ -244,7 +227,6 @@ class Index extends Component
                 $query->where(function ($subQuery) use ($search): void {
                     $subQuery
                         ->where('recipient_name', 'like', $search)
-                        ->orWhere('recipient_contact', 'like', $search)
                         ->orWhereHas('vehicle', function ($vehicleQuery) use ($search): void {
                             $vehicleQuery->where('plate_number', 'like', $search);
                         });
@@ -265,49 +247,6 @@ class Index extends Component
         return Excel::download(new NotificationLogsExport($logs), $filename);
     }
 
-    public function retry(int $id): void
-    {
-        $log = NotificationLog::find($id);
-
-        if ($log === null) {
-            session()->flash('error', __('Notification log not found.'));
-            return;
-        }
-
-        if (! $log->canRetry()) {
-            if ($log->status === NotificationLog::STATUS_SENT) {
-                session()->flash('error', __('This notification has already been sent.'));
-            } elseif ($log->max_retries_reached) {
-                session()->flash('error', __('Maximum retry attempts reached for this notification.'));
-            }
-            return;
-        }
-
-        // Increment retry count
-        $log->incrementRetry();
-
-        $log->update([
-            'status' => NotificationLog::STATUS_PENDING,
-            'error_message' => null,
-        ]);
-
-        // Only dispatch job for email channel
-        if ($log->channel === NotificationLog::CHANNEL_EMAIL) {
-            SendMaintenanceNotificationJob::dispatch($log->id);
-        } else {
-            // For in_app, just mark as sent (it's visible in the UI)
-            $log->update([
-                'status' => NotificationLog::STATUS_SENT,
-                'sent_at' => now(),
-            ]);
-        }
-
-        session()->flash('success', __('Notification has been queued for retry.'));
-    }
-
-    /**
-     * Mark an in-app notification as read.
-     */
     public function markAsRead(int $id): void
     {
         $log = NotificationLog::find($id);
@@ -316,51 +255,11 @@ class Index extends Component
             return;
         }
 
-        $log->markAsRead();
-    }
-
-    /**
-     * Bulk retry selected notifications.
-     */
-    public function bulkRetry(): void
-    {
-        if ($this->selected === []) {
+        if (! (auth()->user()?->isAdmin() ?? false) && $log->user_id !== auth()->id()) {
             return;
         }
 
-        $logs = NotificationLog::whereIn('id', $this->selected)->get();
-
-        $retried = 0;
-
-        foreach ($logs as $log) {
-            if (! $log->canRetry()) {
-                continue;
-            }
-
-            $log->incrementRetry();
-
-            $log->update([
-                'status' => NotificationLog::STATUS_PENDING,
-                'error_message' => null,
-            ]);
-
-            if ($log->channel === NotificationLog::CHANNEL_EMAIL) {
-                SendMaintenanceNotificationJob::dispatch($log->id);
-            } else {
-                $log->update([
-                    'status' => NotificationLog::STATUS_SENT,
-                    'sent_at' => now(),
-                ]);
-            }
-
-            $retried++;
-        }
-
-        $this->selected = [];
-
-        if ($retried > 0) {
-            session()->flash('success', __(':count notifications queued for retry.', ['count' => $retried]));
-        }
+        $log->markAsRead();
     }
 
     /**
@@ -372,9 +271,15 @@ class Index extends Component
             return;
         }
 
-        $count = NotificationLog::whereIn('id', $this->selected)
+        $query = NotificationLog::whereIn('id', $this->selected)
             ->whereNull('archived_at')
-            ->update(['archived_at' => now()]);
+            ->where('channel', NotificationLog::CHANNEL_IN_APP);
+
+        if (! (auth()->user()?->isAdmin() ?? false)) {
+            $query->where('user_id', auth()->id());
+        }
+
+        $count = $query->update(['archived_at' => now()]);
 
         $this->selected = [];
         $this->resetPage();
@@ -387,14 +292,17 @@ class Index extends Component
     private function getLogs(): LengthAwarePaginator
     {
         return $this->buildBaseQuery()
-            ->when($this->status, function ($query): void {
-                $query->where('status', $this->status);
-            })
-            ->when($this->channel, function ($query): void {
-                $query->where('channel', $this->channel);
-            })
             ->when($this->type, function ($query): void {
                 $query->where('type', $this->type);
+            })
+            ->when($this->read, function ($query): void {
+                if ($this->read === 'unread') {
+                    $query->whereNull('read_at');
+                }
+
+                if ($this->read === 'read') {
+                    $query->whereNotNull('read_at');
+                }
             })
             ->when($this->search, function ($query): void {
                 $search = '%' . $this->search . '%';
@@ -402,7 +310,6 @@ class Index extends Component
                 $query->where(function ($subQuery) use ($search): void {
                     $subQuery
                         ->where('recipient_name', 'like', $search)
-                        ->orWhere('recipient_contact', 'like', $search)
                         ->orWhereHas('vehicle', function ($vehicleQuery) use ($search): void {
                             $vehicleQuery->where('plate_number', 'like', $search);
                         });
@@ -420,23 +327,40 @@ class Index extends Component
     }
 
     /**
-     * Get counts for quick filter badges.
+     * Get read/unread counts for quick filter badges.
      */
-    private function getStatusCounts(): array
+    private function getReadCounts(): array
     {
+        $base = $this->baseQuery();
+
         return [
-            'pending' => NotificationLog::whereNull('archived_at')->where('status', NotificationLog::STATUS_PENDING)->count(),
-            'sent' => NotificationLog::whereNull('archived_at')->where('status', NotificationLog::STATUS_SENT)->count(),
-            'failed' => NotificationLog::whereNull('archived_at')->where('status', NotificationLog::STATUS_FAILED)->count(),
+            'unread' => (clone $base)->whereNull('archived_at')->whereNull('read_at')->count(),
+            'read' => (clone $base)->whereNull('archived_at')->whereNotNull('read_at')->count(),
         ];
+    }
+
+    /**
+     * Base query with relations and access scope.
+     */
+    private function baseQuery(): Builder
+    {
+        $query = NotificationLog::query()
+            ->with(['vehicle', 'maintenanceRecord', 'user'])
+            ->where('channel', NotificationLog::CHANNEL_IN_APP);
+
+        if (! (auth()->user()?->isAdmin() ?? false)) {
+            $query->where('user_id', auth()->id());
+        }
+
+        return $query;
     }
 
     /**
      * Base query with relations and archived filter.
      */
-    private function buildBaseQuery()
+    private function buildBaseQuery(): Builder
     {
-        return NotificationLog::with(['vehicle', 'maintenanceRecord'])
+        return $this->baseQuery()
             ->when($this->archived === 'active', function ($query): void {
                 $query->whereNull('archived_at');
             })
@@ -454,7 +378,8 @@ class Index extends Component
     {
         $from = now()->subDays(30);
 
-        $overdueQuery = NotificationLog::whereNull('archived_at')
+        $overdueQuery = $this->baseQuery()
+            ->whereNull('archived_at')
             ->where('type', NotificationLog::TYPE_MAINTENANCE_OVERDUE)
             ->where('created_at', '>=', $from);
 

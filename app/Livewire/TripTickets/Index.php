@@ -45,6 +45,8 @@ class Index extends Component
     public ?int $odometer_start = null;
     public ?int $odometer_end = null;
 
+    public ?int $confirmingCancelId = null;
+
     protected function rules(): array
     {
         return [
@@ -221,6 +223,61 @@ class Index extends Component
         $this->travel_date = null;
         $this->odometer_start = null;
         $this->odometer_end = null;
+    }
+
+    public function confirmCancel(int $id): void
+    {
+        $ticket = TripTicket::findOrFail($id);
+
+        if ($ticket->status === 'cancelled' || $ticket->status === 'completed') {
+            session()->flash('error', __('This trip cannot be cancelled.'));
+            return;
+        }
+
+        $this->confirmingCancelId = $id;
+    }
+
+    public function cancelTrip(): void
+    {
+        if ($this->confirmingCancelId === null) {
+            return;
+        }
+
+        $ticket = TripTicket::findOrFail($this->confirmingCancelId);
+        $user = auth()->user();
+        $isAdmin = $user?->isAdmin() ?? false;
+
+        if ($ticket->status === 'cancelled' || $ticket->status === 'completed') {
+            session()->flash('error', __('This trip cannot be cancelled.'));
+            $this->confirmingCancelId = null;
+            return;
+        }
+
+        if ($isAdmin) {
+            $ticket->update(['status' => 'cancelled']);
+            session()->flash('success', __('Trip ticket cancelled successfully.'));
+        } else {
+            $vehicle = $ticket->vehicle;
+
+            ApprovalRequest::create([
+                'requester_user_id' => $user->id,
+                'action' => ApprovalRequest::ACTION_CANCEL,
+                'subject_type' => 'TripTicket',
+                'subject_id' => $ticket->id,
+                'subject_label' => 'Cancel trip to ' . ($ticket->destination ?? 'destination') . ' (' . ($vehicle?->plate_number ?? 'vehicle') . ')',
+                'original_data' => $ticket->only(['status']),
+                'proposed_data' => ['status' => 'cancelled'],
+            ]);
+
+            session()->flash('success', __('Your cancellation request has been sent for admin approval.'));
+        }
+
+        $this->confirmingCancelId = null;
+    }
+
+    public function closeCancelModal(): void
+    {
+        $this->confirmingCancelId = null;
     }
 
     public function mount(): void

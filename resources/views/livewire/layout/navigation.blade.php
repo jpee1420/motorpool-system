@@ -105,11 +105,13 @@ new class extends Component
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
-                        @if (auth()->user()?->isStaffOrAbove())
+                        @if (auth()->user()?->isStaff())
                             <x-dropdown-link :href="route('approvals.staff')" wire:navigate>
                                 {{ __('My submissions') }}
                             </x-dropdown-link>
+                        @endif
 
+                        @if (auth()->user()?->isAdmin())
                             <x-dropdown-link :href="route('activity-logs.index')" wire:navigate>
                                 {{ __('Activity log') }}
                             </x-dropdown-link>
@@ -198,9 +200,15 @@ new class extends Component
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
 
-                @if (auth()->user()?->isStaffOrAbove())
+                @if (auth()->user()?->isStaff())
                     <x-responsive-nav-link :href="route('approvals.staff')" wire:navigate>
                         {{ __('My submissions') }}
+                    </x-responsive-nav-link>
+                @endif
+
+                @if (auth()->user()?->isAdmin())
+                    <x-responsive-nav-link :href="route('approvals.admin')" wire:navigate>
+                        {{ __('Approvals') }}
                     </x-responsive-nav-link>
 
                     <x-responsive-nav-link :href="route('activity-logs.index')" wire:navigate>

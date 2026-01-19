@@ -41,7 +41,7 @@ return [
         'max_retries' => env('MOTORPOOL_NOTIFICATION_MAX_RETRIES', 3),
 
         // Channels to use when creating notifications (email, in_app)
-        'channels' => ['email', 'in_app'],
+        'channels' => ['in_app'],
 
         // Which mailer to use for sending email notifications
         // Options: 'default' (uses MAIL_MAILER), 'gmail', 'yahoo', or any mailer defined in config/mail.php

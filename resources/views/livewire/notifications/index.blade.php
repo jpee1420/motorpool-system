@@ -32,37 +32,15 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">
-                    {{ __('Notification logs') }}
+                    {{ __('Notifications') }}
                 </h1>
                 <p class="mt-1 text-sm text-gray-500">
-                    {{ __('Review all maintenance reminder notifications that have been logged and sent.') }}
+                    {{ __('Review your in-app notifications.') }}
                 </p>
             </div>
 
             <!-- Export buttons -->
             <div class="flex items-center gap-2">
-                @auth
-                    @if (auth()->user()?->isStaffOrAbove())
-                        <button
-                            type="button"
-                            wire:click="runMaintenanceCheck"
-                            wire:loading.attr="disabled"
-                            wire:target="runMaintenanceCheck"
-                            class="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h4l2 2h8a1 1 0 011 1v1M4 7h16M4 11h16M4 15h10M4 19h6" />
-                            </svg>
-                            <span wire:loading.remove wire:target="runMaintenanceCheck">
-                                {{ __('Run maintenance check') }}
-                            </span>
-                            <span wire:loading wire:target="runMaintenanceCheck">
-                                {{ __('Running...') }}
-                            </span>
-                        </button>
-                    @endif
-                @endauth
-
                 <button
                     type="button"
                     wire:click="exportCsv"
@@ -122,44 +100,31 @@
 
             <button
                 type="button"
-                wire:click="filterStatus(null)"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition {{ $status === null ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
+                wire:click="filterRead(null)"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition {{ $read === null ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
             >
                 {{ __('All') }}
             </button>
 
             <button
                 type="button"
-                wire:click="filterStatus('pending')"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition {{ $status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
+                wire:click="filterRead('unread')"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition {{ $read === 'unread' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
             >
-                {{ __('Pending') }}
-                @if ($statusCounts['pending'] > 0)
+                {{ __('Unread') }}
+                @if (($readCounts['unread'] ?? 0) > 0)
                     <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-semibold rounded-full bg-yellow-200 text-yellow-800">
-                        {{ $statusCounts['pending'] }}
+                        {{ $readCounts['unread'] }}
                     </span>
                 @endif
             </button>
 
             <button
                 type="button"
-                wire:click="filterStatus('failed')"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition {{ $status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
+                wire:click="filterRead('read')"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition {{ $read === 'read' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
             >
-                {{ __('Failed') }}
-                @if ($statusCounts['failed'] > 0)
-                    <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-semibold rounded-full bg-red-200 text-red-800">
-                        {{ $statusCounts['failed'] }}
-                    </span>
-                @endif
-            </button>
-
-            <button
-                type="button"
-                wire:click="filterStatus('sent')"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition {{ $status === 'sent' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
-            >
-                {{ __('Sent') }}
+                {{ __('Read') }}
             </button>
 
             <button
@@ -173,7 +138,7 @@
                 {{ __('Today') }}
             </button>
 
-            @if ($status || $channel || $type || $search || $fromDate || $toDate || $archived !== 'active')
+            @if ($read || $type || $search || $fromDate || $toDate || $archived !== 'active')
                 <button
                     type="button"
                     wire:click="clearFilters"
@@ -222,37 +187,22 @@
                     <input
                         type="text"
                         wire:model.live="search"
-                        placeholder="{{ __('Plate / name / contact') }}"
+                        placeholder="{{ __('Plate / name') }}"
                         class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     >
                 </div>
 
                 <div>
                     <label class="block text-xs font-medium text-gray-600">
-                        {{ __('Status') }}
+                        {{ __('Read') }}
                     </label>
                     <select
-                        wire:model.live="status"
+                        wire:model.live="read"
                         class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         <option value="">{{ __('All') }}</option>
-                        <option value="sent">{{ __('Sent') }}</option>
-                        <option value="pending">{{ __('Pending') }}</option>
-                        <option value="failed">{{ __('Failed') }}</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-medium text-gray-600">
-                        {{ __('Channel') }}
-                    </label>
-                    <select
-                        wire:model.live="channel"
-                        class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    >
-                        <option value="">{{ __('All') }}</option>
-                        <option value="email">{{ __('Email') }}</option>
-                        <option value="in_app">{{ __('In-App') }}</option>
+                        <option value="unread">{{ __('Unread') }}</option>
+                        <option value="read">{{ __('Read') }}</option>
                     </select>
                 </div>
 
@@ -306,18 +256,9 @@
                         <div class="flex items-center gap-2">
                             <button
                                 type="button"
-                                wire:click="bulkRetry"
-                                wire:loading.attr="disabled"
-                                wire:target="bulkRetry,bulkArchive"
-                                class="inline-flex items-center gap-1 rounded-full border border-indigo-500 bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
-                            >
-                                {{ __('Retry') }}
-                            </button>
-                            <button
-                                type="button"
                                 wire:click="bulkArchive"
                                 wire:loading.attr="disabled"
-                                wire:target="bulkRetry,bulkArchive"
+                                wire:target="bulkArchive"
                                 class="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
                             >
                                 {{ __('Archive') }}
@@ -342,9 +283,6 @@
                                 {{ __('Recipient') }}
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Channel') }}
-                            </th>
-                            <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                 {{ __('Severity') }}
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -354,7 +292,7 @@
                                 {{ __('Due Info') }}
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Status') }}
+                                {{ __('Read') }}
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                 {{ __('Resolution') }}
@@ -369,7 +307,7 @@
                             @php
                                 $meta = $log->meta ?? [];
                             @endphp
-                            <tr class="{{ $log->channel === 'in_app' && $log->read_at === null ? 'bg-blue-50/50' : '' }}">
+                            <tr class="{{ $log->read_at === null ? 'bg-blue-50/50' : '' }}">
                                 <td class="px-3 py-3 whitespace-nowrap">
                                     <input
                                         type="checkbox"
@@ -399,23 +337,7 @@
                                 <td class="px-3 py-3 whitespace-nowrap text-gray-700">
                                     <div class="flex flex-col">
                                         <span>{{ $log->recipient_name ?: '—' }}</span>
-                                        @if ($log->recipient_contact)
-                                            <span class="text-xs text-gray-500">{{ $log->recipient_contact }}</span>
-                                        @endif
                                     </div>
-                                </td>
-                                <td class="px-3 py-3 whitespace-nowrap">
-                                    @php
-                                        $channelClasses = [
-                                            'email' => 'bg-blue-100 text-blue-800',
-                                            'in_app' => 'bg-purple-100 text-purple-800',
-                                        ];
-                                        $channelClass = $channelClasses[$log->channel] ?? 'bg-gray-100 text-gray-800';
-                                        $channelLabel = $log->channel === 'in_app' ? 'In-App' : strtoupper($log->channel);
-                                    @endphp
-                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $channelClass }}">
-                                        {{ $channelLabel }}
-                                    </span>
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap">
                                     @php
@@ -454,30 +376,9 @@
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap">
                                     <div class="flex flex-col items-start gap-1">
-                                        @php
-                                            $statusClasses = [
-                                                'sent' => 'bg-green-100 text-green-800',
-                                                'failed' => 'bg-red-100 text-red-800',
-                                                'pending' => 'bg-yellow-100 text-yellow-800',
-                                            ];
-                                            $statusClass = $statusClasses[$log->status] ?? 'bg-gray-100 text-gray-800';
-                                        @endphp
-                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $statusClass }}">
-                                            {{ ucfirst($log->status) }}
+                                        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ $log->read_at === null ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-200 text-gray-800' }}">
+                                            {{ $log->read_at === null ? __('Unread') : __('Read') }}
                                         </span>
-                                        @if ($log->retry_count > 0)
-                                            <span class="text-xs text-gray-500" title="{{ __('Retry attempts') }}">
-                                                {{ $log->retry_count }}/{{ config('motorpool.notifications.max_retries', 3) }} {{ __('retries') }}
-                                            </span>
-                                        @endif
-                                        @if ($log->max_retries_reached)
-                                            <span class="text-xs text-red-600 font-medium">{{ __('Max reached') }}</span>
-                                        @endif
-                                        @if ($log->error_message)
-                                            <span class="text-xs text-red-600 truncate max-w-[120px]" title="{{ $log->error_message }}">
-                                                {{ Str::limit($log->error_message, 20) }}
-                                            </span>
-                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap">
@@ -507,7 +408,7 @@
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        @if ($log->channel === 'in_app' && $log->read_at === null)
+                                        @if ($log->read_at === null)
                                             <button
                                                 type="button"
                                                 wire:click="markAsRead({{ $log->id }})"
@@ -519,26 +420,12 @@
                                                 </svg>
                                             </button>
                                         @endif
-                                        @if ($log->canRetry())
-                                            <button
-                                                type="button"
-                                                wire:click="retry({{ $log->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="retry({{ $log->id }})"
-                                                class="text-xs font-medium text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
-                                            >
-                                                <span wire:loading.remove wire:target="retry({{ $log->id }})">{{ __('Retry') }}</span>
-                                                <span wire:loading wire:target="retry({{ $log->id }})">{{ __('Retrying...') }}</span>
-                                            </button>
-                                        @elseif ($log->status !== 'sent')
-                                            <span class="text-xs text-gray-400">—</span>
-                                        @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-3 py-6 text-center text-gray-500">
+                                <td colspan="10" class="px-3 py-6 text-center text-gray-500">
                                     {{ __('No notifications found for the selected filters.') }}
                                 </td>
                             </tr>

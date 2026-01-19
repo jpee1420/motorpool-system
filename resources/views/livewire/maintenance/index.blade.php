@@ -25,16 +25,34 @@
             </div>
 
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <div>
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <select
                         wire:model.live="vehicleFilter"
-                        class="w-full sm:w-64 rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        class="w-full sm:w-48 rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     >
                         <option value="">{{ __('All vehicles') }}</option>
                         @foreach ($vehicles as $vehicle)
                             <option value="{{ $vehicle->id }}">{{ $vehicle->plate_number }}</option>
                         @endforeach
                     </select>
+
+                    @auth
+                        @if (auth()->user()?->isStaffOrAbove())
+                            <button
+                                type="button"
+                                wire:click="runMaintenanceCheck"
+                                wire:loading.attr="disabled"
+                                wire:target="runMaintenanceCheck"
+                                class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h4l2 2h8a1 1 0 011 1v1M4 7h16M4 11h16M4 15h10M4 19h6" />
+                                </svg>
+                                <span wire:loading.remove wire:target="runMaintenanceCheck">{{ __('Run maintenance check') }}</span>
+                                <span wire:loading wire:target="runMaintenanceCheck">{{ __('Running...') }}</span>
+                            </button>
+                        @endif
+                    @endauth
                 </div>
 
                 @if ($canExport || $canCreate)

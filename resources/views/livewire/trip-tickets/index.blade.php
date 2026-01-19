@@ -147,16 +147,10 @@
                                     <p class="text-xs text-gray-500 uppercase tracking-wide mb-0.5">{{ __('Destination') }}</p>
                                     <p class="text-sm font-medium text-gray-900">{{ $ticket->destination ?: '—' }}</p>
                                 </div>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
+                                <div>
                                         <p class="text-xs text-gray-500 uppercase tracking-wide mb-0.5">{{ __('Departure') }}</p>
-                                        <p class="text-sm font-medium text-gray-900">{{ $ticket->departure_at?->format('M d, Y H:i') ?? '—' }}</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ $ticket->departure_at?->format('M d, Y') ?? '—' }}</p>
                                     </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500 uppercase tracking-wide mb-0.5">{{ __('Return') }}</p>
-                                        <p class="text-sm font-medium text-gray-900">{{ $ticket->return_at?->format('M d, Y H:i') ?? '—' }}</p>
-                                    </div>
-                                </div>
                             </div>
 
                             <div class="flex gap-2 mt-3 pt-3 border-t border-gray-100">
@@ -173,6 +167,15 @@
                                 >
                                     {{ __('Edit') }}
                                 </button>
+                                @if ($ticket->status !== 'cancelled' && $ticket->status !== 'completed')
+                                    <button
+                                        type="button"
+                                        wire:click="confirmCancel({{ $ticket->id }})"
+                                        class="text-red-600 text-sm font-medium"
+                                    >
+                                        {{ __('Cancel') }}
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     @empty
@@ -200,9 +203,6 @@
                                 {{ __('Departure') }}
                             </th>
                             <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                {{ __('Return') }}
-                            </th>
-                            <th class="px-3 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                                 {{ __('Status') }}
                             </th>
                             <th class="px-3 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -223,10 +223,7 @@
                                     {{ $ticket->destination }}
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap text-gray-700">
-                                    {{ $ticket->departure_at?->format('M d, Y H:i') ?? '—' }}
-                                </td>
-                                <td class="px-3 py-3 whitespace-nowrap text-gray-700">
-                                    {{ $ticket->return_at?->format('M d, Y H:i') ?? '—' }}
+                                    {{ $ticket->departure_at?->format('M d, Y') ?? '—' }}
                                 </td>
                                 <td class="px-3 py-3 whitespace-nowrap">
                                     @php
@@ -258,12 +255,21 @@
                                         >
                                             {{ __('Edit') }}
                                         </button>
+                                        @if ($ticket->status !== 'cancelled' && $ticket->status !== 'completed')
+                                            <button
+                                                type="button"
+                                                wire:click="confirmCancel({{ $ticket->id }})"
+                                                class="text-red-600 hover:text-red-900 text-xs font-medium"
+                                            >
+                                                {{ __('Cancel') }}
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-3 py-6 text-center text-gray-500">
+                                <td colspan="6" class="px-3 py-6 text-center text-gray-500">
                                     {{ __('No trip tickets found.') }}
                                 </td>
                             </tr>
@@ -276,6 +282,52 @@
                 {{ $tickets->links() }}
             </div>
         </div>
+
+        @if ($confirmingCancelId)
+            <x-modal name="confirm-cancel-trip" :show="true" focusable>
+                <div class="p-6">
+                    <h2 class="text-lg font-semibold text-gray-900">
+                        {{ __('Cancel Trip Ticket') }}
+                    </h2>
+
+                    <p class="mt-3 text-sm text-gray-600">
+                        @if (auth()->user()?->isAdmin())
+                            {{ __('Are you sure you want to cancel this trip ticket? This action cannot be undone.') }}
+                        @else
+                            {{ __('Your cancellation request will be sent to an administrator for approval.') }}
+                        @endif
+                    </p>
+
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            wire:click="closeCancelModal"
+                            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            {{ __('Nevermind') }}
+                        </button>
+
+                        <button
+                            type="button"
+                            wire:click="cancelTrip"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-50"
+                        >
+                            <span wire:loading.remove wire:target="cancelTrip">
+                                @if (auth()->user()?->isAdmin())
+                                    {{ __('Cancel Trip') }}
+                                @else
+                                    {{ __('Request Cancellation') }}
+                                @endif
+                            </span>
+                            <span wire:loading wire:target="cancelTrip">
+                                {{ __('Processing...') }}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </x-modal>
+        @endif
 
         @if ($showModal)
             <x-modal name="trip-ticket-create" :show="$showModal" focusable>

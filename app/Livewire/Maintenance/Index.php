@@ -9,6 +9,7 @@ use App\Models\ApprovalRequest;
 use App\Models\MaintenanceMaterial;
 use App\Models\MaintenanceRecord;
 use App\Models\Vehicle;
+use App\Services\MaintenanceNotificationService;
 use App\Services\Maintenance\NextMaintenanceCalculator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -115,6 +116,24 @@ class Index extends Component
     public function updatingVehicleFilter(): void
     {
         $this->resetPage();
+    }
+
+    public function runMaintenanceCheck(MaintenanceNotificationService $service): void
+    {
+        if (! (auth()->user()?->isStaffOrAbove() ?? false)) {
+            return;
+        }
+
+        $result = $service->run();
+
+        session()->flash('success', __(
+            'Maintenance check completed. Vehicles checked: :vehicles, notifications created: :created, duplicates skipped: :skipped',
+            [
+                'vehicles' => $result['vehicles_checked'],
+                'created' => $result['created_logs'],
+                'skipped' => $result['skipped_duplicates'],
+            ],
+        ));
     }
 
     public function sortBy(string $field): void

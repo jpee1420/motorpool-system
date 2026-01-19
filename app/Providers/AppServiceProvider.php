@@ -55,5 +55,6 @@ class AppServiceProvider extends ServiceProvider
         RepairMaterial::observe(ActivityLogObserver::class);
         TripTicket::observe(ActivityLogObserver::class);
         User::observe(ActivityLogObserver::class);
+        ApprovalRequest::observe(ActivityLogObserver::class);
     }
 }

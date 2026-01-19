@@ -1,0 +1,43 @@
+flowchart LR
+    %%config
+    %% theme: default
+    %% bg: white
+    U["Staff/Admin User<br/>Browser"] -->|Livewire UI| APP["Motorpool System<br/>Laravel + Livewire"]
+
+    APP -->|Eloquent ORM| DB[(Database)]
+
+    subgraph Scheduler
+        CRON[Server Cron] -->|Laravel Scheduler| SCHED["Scheduled Command<br/>motorpool:check-maintenance<br/>(daily 08:00)"]
+    end
+
+    SCHED -->|runs| APP
+
+    APP -->|creates in-app notifications| NLOG[(notification_logs)]
+    APP -->|reads notifications| NLOG
+    U -->|Notification Bell / Notifications page| APP
+
+    subgraph Workflow
+        STAFF["Staff User<br/>creates/edits records"] -->|submission requires approval| APP
+        APP -->|stores| AREQ[(approval_requests)]
+        ADMIN["Admin User<br/>reviews approvals"] -->|Approve / Reject| APP
+        APP -->|updates| AREQ
+    end
+
+    subgraph DataModules
+        VEH[(vehicles)]
+        MREC[(maintenance_records)]
+        RREC[(repair_records)]
+        TT[(trip_tickets)]
+    end
+
+    APP --> VEH
+    APP --> MREC
+    APP --> RREC
+    APP --> TT
+
+    subgraph Exports
+        EXP["CSV/Excel Export<br/>(Maatwebsite Excel)"]
+    end
+
+    APP -->|exports data| EXP
+    EXP -->|download| U

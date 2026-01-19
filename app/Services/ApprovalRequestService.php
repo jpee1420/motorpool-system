@@ -68,6 +68,10 @@ class ApprovalRequestService
             return $this->updateModel($modelClass, $request->subject_id, $proposedData);
         }
 
+        if ($request->action === ApprovalRequest::ACTION_CANCEL && $request->subject_id !== null) {
+            return $this->updateModel($modelClass, $request->subject_id, $proposedData);
+        }
+
         return null;
     }
 
@@ -75,6 +79,11 @@ class ApprovalRequestService
     {
         $materials = $data['_materials'] ?? null;
         unset($data['_materials']);
+
+        // For TripTicket, set status to 'approved' since it was approved
+        if ($modelClass === TripTicket::class) {
+            $data['status'] = 'approved';
+        }
 
         $model = $modelClass::create($data);
 

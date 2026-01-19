@@ -11,11 +11,11 @@ class ActivityLogPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->isActive() && $user->isStaffOrAbove();
+        return $user->isActive() && $user->isAdmin();
     }
 
     public function view(User $user, ActivityLog $log): bool
     {
-        return $user->isActive() && $user->isStaffOrAbove();
+        return $user->isActive() && $user->isAdmin();
     }
 }

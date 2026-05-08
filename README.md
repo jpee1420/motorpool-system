@@ -40,80 +40,82 @@
 
 ---
 
-## Quick Start (Local Development)
+## Quick Start (Beginner-Friendly Local Setup)
 
-### 1. Clone and install dependencies
+Welcome! If you are new to software development, don't worry. This guide will walk you through setting up the project on your computer step-by-step.
+
+### Step 1: Install Required Tools
+
+You will need to install a few tools to run the project.
+
+1. **Laragon**: This is a magical tool that includes almost everything you need (PHP, MySQL Database, Composer, and a terminal).
+   - Download **Laragon Full** from [laragon.org/download](https://laragon.org/download/) and install it.
+   - Once installed, open Laragon. Click the **gear icon** (top right) to open Preferences. Go to the **Services & Ports** tab and make sure the following toggles are enabled: **Apache**, **MySQL**, and **Mail Catcher** (for testing emails).
+   - After confirming, click **Start All** on the main Laragon window.
+2. **Node.js**: Needed for the frontend (user interface) parts of the app.
+   - Download the **LTS (Long Term Support)** version from [nodejs.org](https://nodejs.org/) and install it.
+3. **Git**: Needed to download the project code.
+   - Download from [git-scm.com/downloads](https://git-scm.com/downloads) and install it with default settings.
+
+### Step 2: Download the Project
+
+1. Click the **Terminal** button inside Laragon to open your command line.
+2. Type the following command and press Enter (replace `<your-repo-url>` with the actual link):
+   ```bash
+   git clone <your-repo-url> motorpool-system
+   ```
+3. Move into the project folder you just downloaded:
+   ```bash
+   cd motorpool-system
+   ```
+
+### Step 3: Install Project Dependencies
+
+While still inside the `motorpool-system` folder in your terminal, run these two commands to install the necessary background files:
+
+1. Install PHP dependencies:
+   ```bash
+   composer install
+   ```
+2. Install Javascript dependencies:
+   ```bash
+   npm install
+   ```
+
+### Step 4: Configure the Project
+
+1. **Create the settings file**: The project needs a settings file. We provide an example one. Copy it by running:
+   ```bash
+   cp .env.example .env
+   ```
+2. **Generate a security key**:
+   ```bash
+   php artisan key:generate
+   ```
+3. **Set up the Database**:
+   - Click the **Database** button in Laragon to open HeidiSQL. 
+   - Create a new database and name it `motorpool_db`.
+4. **Prepare the database tables**:
+   ```bash
+   php artisan migrate
+   ```
+
+### Step 5: Start the Application!
+
+To run the project, you just need a single terminal window. Make sure you are inside the `motorpool-system` folder and run:
 
 ```bash
-git clone <your-repo-url> motorpool-system
-cd motorpool-system
-
-composer install
-npm install
+composer run dev
 ```
 
-### 2. Configure environment
+This single command automatically starts the backend server, the frontend interface, and the background task queue all at once!
 
-Copy the example environment and generate an app key:
+### Step 6: View the App
 
-```bash
-cp .env.example .env
-php artisan key:generate
-```
+Open your web browser (Chrome, Edge, Safari, etc.) and go to:
+**[http://localhost:8000](http://localhost:8000)**
 
-
-### 3. Database and migrations
-
-Create the database (`motorpool_db`) in MySQL, then run:
-
-```bash
-php artisan migrate
-```
-
-If the queue tables are not present yet:
-
-```bash
-php artisan queue:table
-php artisan migrate
-```
-
-### 4. Frontend assets
-
-For development (recommended while coding):
-
-```bash
-npm run dev
-```
-
-For a production-style build:
-
-```bash
-npm run build
-```
-
-### 5. Running the application
-
-If you are not using Laragon’s virtual host, you can use:
-
-```bash
-php artisan serve
-```
-
-Then open the app at the URL shown by `php artisan serve` or your configured `APP_URL` (e.g., `http://motorpool-system.test`).
-
-### 6. Queues and notifications (local)
-
-To process queued jobs (maintenance notifications, etc.):
-
-```bash
-php artisan queue:work
-```
-
-Start Mailpit (via Laragon or manually) and open:
-
-- Mailpit UI: `http://localhost:1137`
-
-All outgoing emails (including maintenance notifications) will appear there in local development.
+Congratulations! You should now see the Motorpool System running on your computer.
 
 ---
 
@@ -153,15 +155,4 @@ This project implements several security measures:
 - **File Upload Protection** – Strict MIME type validation, random filenames, secure storage
 - **XSS Prevention** – All Blade output is escaped by default
 
-For the full security implementation plan and checklist, see:
-
-- [`SECURITY_PLAN.md`](SECURITY_PLAN.md)
-
----
-
-## Further Documentation
-
-For a deeper look at modules, database schema, and deployment strategy, see:
-
-- [`MOTORPOOL_PROJECT_PLAN.md`](MOTORPOOL_PROJECT_PLAN.md)
 

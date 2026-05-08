@@ -17,7 +17,12 @@ use App\Livewire\Vehicles\Index as VehiclesIndex;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
-Route::redirect('/', '/login');
+Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+    return view('welcome');
+});
 
 Route::post('/logout', function () {
     Auth::logout();

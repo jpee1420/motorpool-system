@@ -13,6 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->alias([
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('motorpool:check-maintenance')->dailyAt('08:00');

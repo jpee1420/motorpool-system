@@ -8,6 +8,7 @@ use App\Models\ActivityLog;
 use App\Models\ApprovalRequest;
 use App\Models\MaintenanceRecord;
 use App\Models\MaintenanceMaterial;
+use App\Models\NotificationLog;
 use App\Models\RepairRecord;
 use App\Models\RepairMaterial;
 use App\Models\TripTicket;
@@ -17,6 +18,7 @@ use App\Observers\ActivityLogObserver;
 use App\Policies\ActivityLogPolicy;
 use App\Policies\ApprovalRequestPolicy;
 use App\Policies\MaintenanceRecordPolicy;
+use App\Policies\NotificationLogPolicy;
 use App\Policies\RepairRecordPolicy;
 use App\Policies\TripTicketPolicy;
 use App\Policies\UserPolicy;
@@ -45,6 +47,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(RepairRecord::class, RepairRecordPolicy::class);
         Gate::policy(TripTicket::class, TripTicketPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(NotificationLog::class, NotificationLogPolicy::class);
         Gate::policy(ActivityLog::class, ActivityLogPolicy::class);
         Gate::policy(ApprovalRequest::class, ApprovalRequestPolicy::class);
 

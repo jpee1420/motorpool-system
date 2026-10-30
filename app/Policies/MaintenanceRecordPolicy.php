@@ -22,7 +22,17 @@ class MaintenanceRecordPolicy
      */
     public function view(User $user, MaintenanceRecord $record): bool
     {
-        return $user->isActive();
+        if (! $user->isActive()) {
+            return false;
+        }
+
+        if ($user->isStaffOrAbove()) {
+            return true;
+        }
+
+        return (int) $record->assigned_driver_id === (int) $user->id
+            || (int) $record->performed_by_user_id === (int) $user->id
+            || (int) optional($record->vehicle)->user_id === (int) $user->id;
     }
 
     /**

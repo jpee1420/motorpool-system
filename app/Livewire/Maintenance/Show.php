@@ -18,12 +18,14 @@ class Show extends Component
 
     public function mount(MaintenanceRecord $record): void
     {
-        $this->record = $record->load([
+        $this->record = MaintenanceRecord::query()->findOrFail($record->id)->load([
             'vehicle',
             'assignedDriver',
             'materials',
             'performedBy',
         ]);
+
+        $this->authorize('view', $this->record);
     }
 
     public function delete(): void

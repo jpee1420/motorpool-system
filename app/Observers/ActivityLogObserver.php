@@ -30,6 +30,11 @@ class ActivityLogObserver
         $this->logUpdated($model);
     }
 
+    public function deleted(Model $model): void
+    {
+        $this->logDeleted($model);
+    }
+
     private function logCreated(Model $model): void
     {
         if (! $this->shouldLog($model)) {
@@ -93,6 +98,29 @@ class ActivityLogObserver
             'subject_label' => $this->makeSubjectLabel($model),
             'old_values' => $oldValues !== [] ? $oldValues : null,
             'new_values' => $newValues !== [] ? $newValues : null,
+            'ip_address' => $ipAddress,
+            'user_agent' => $userAgent,
+        ]);
+    }
+
+    private function logDeleted(Model $model): void
+    {
+        if (! $this->shouldLog($model)) {
+            return;
+        }
+
+        $deletedValues = $this->filterAttributes($model, $model->getAttributes());
+
+        [$ipAddress, $userAgent] = $this->getRequestMeta();
+
+        ActivityLog::create([
+            'actor_user_id' => Auth::id(),
+            'action' => 'deleted',
+            'subject_type' => $model::class,
+            'subject_id' => $model->getKey(),
+            'subject_label' => $this->makeSubjectLabel($model),
+            'old_values' => $deletedValues !== [] ? $deletedValues : null,
+            'new_values' => null,
             'ip_address' => $ipAddress,
             'user_agent' => $userAgent,
         ]);

@@ -14,7 +14,7 @@ Route::middleware('guest')->group(function () {
         ->name('password.request');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Volt::route('confirm-password', 'pages.auth.confirm-password')
         ->name('password.confirm');
 });

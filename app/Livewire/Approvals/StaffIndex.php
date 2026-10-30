@@ -49,6 +49,16 @@ class StaffIndex extends Component
 
     public function openDetails(int $id): void
     {
+        $request = ApprovalRequest::whereKey($id)
+            ->where('requester_user_id', auth()->id())
+            ->first();
+
+        if ($request === null) {
+            abort(403);
+        }
+
+        $this->authorize('view', $request);
+
         $this->detailsId = $id;
         $this->showDetailsModal = true;
     }

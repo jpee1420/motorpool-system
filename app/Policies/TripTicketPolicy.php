@@ -22,7 +22,16 @@ class TripTicketPolicy
      */
     public function view(User $user, TripTicket $tripTicket): bool
     {
-        return $user->isActive();
+        if (! $user->isActive()) {
+            return false;
+        }
+
+        if ($user->isStaffOrAbove()) {
+            return true;
+        }
+
+        return (int) $tripTicket->requested_by_user_id === (int) $user->id
+            || (int) optional($tripTicket->vehicle)->user_id === (int) $user->id;
     }
 
     /**

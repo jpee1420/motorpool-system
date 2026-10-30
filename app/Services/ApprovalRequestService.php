@@ -19,6 +19,10 @@ class ApprovalRequestService
 {
     public function approve(ApprovalRequest $request, User $reviewer, ?string $notes = null): bool
     {
+        if (! $reviewer->isAdmin() || ! $request->isPending()) {
+            return false;
+        }
+
         return DB::transaction(function () use ($request, $reviewer, $notes): bool {
             $model = $this->applyProposedData($request);
 
@@ -40,6 +44,10 @@ class ApprovalRequestService
 
     public function reject(ApprovalRequest $request, User $reviewer, ?string $notes = null): bool
     {
+        if (! $reviewer->isAdmin() || ! $request->isPending()) {
+            return false;
+        }
+
         $request->update([
             'status' => ApprovalRequest::STATUS_REJECTED,
             'reviewer_user_id' => $reviewer->id,

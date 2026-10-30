@@ -31,64 +31,51 @@ Route::post('/logout', function () {
     return redirect('/');
 })->name('logout');
 
-Route::get('dashboard', DashboardController::class)
-    ->middleware(['auth'])
-    ->name('dashboard');
+Route::middleware(['auth', 'active'])->group(function (): void {
+    Route::get('dashboard', DashboardController::class)
+        ->name('dashboard');
 
-Route::get('vehicles', VehiclesIndex::class)
-    ->middleware(['auth'])
-    ->name('vehicles.index');
+    Route::get('vehicles', VehiclesIndex::class)
+        ->name('vehicles.index');
 
-Route::get('maintenance', MaintenanceIndex::class)
-    ->middleware(['auth'])
-    ->name('maintenance.index');
+    Route::get('maintenance', MaintenanceIndex::class)
+        ->name('maintenance.index');
 
-Route::get('maintenance/{record}', MaintenanceShow::class)
-    ->middleware(['auth'])
-    ->name('maintenance.show');
+    Route::get('maintenance/{record}', MaintenanceShow::class)
+        ->name('maintenance.show');
 
-Route::get('repair', RepairIndex::class)
-    ->middleware(['auth'])
-    ->name('repair.index');
+    Route::get('repair', RepairIndex::class)
+        ->name('repair.index');
 
-Route::get('repair/{record}', RepairShow::class)
-    ->middleware(['auth'])
-    ->name('repair.show');
+    Route::get('repair/{record}', RepairShow::class)
+        ->name('repair.show');
 
-Route::get('notifications', NotificationsIndex::class)
-    ->middleware(['auth'])
-    ->name('notifications.index');
+    Route::get('notifications', NotificationsIndex::class)
+        ->name('notifications.index');
 
-Route::get('calendar', CalendarIndex::class)
-    ->middleware(['auth'])
-    ->name('calendar.index');
+    Route::get('calendar', CalendarIndex::class)
+        ->name('calendar.index');
 
-Route::get('trip-tickets', TripTicketsIndex::class)
-    ->middleware(['auth'])
-    ->name('trip-tickets.index');
+    Route::get('trip-tickets', TripTicketsIndex::class)
+        ->name('trip-tickets.index');
 
-Route::get('trip-tickets/{ticket}', TripTicketsShow::class)
-    ->middleware(['auth'])
-    ->name('trip-tickets.show');
+    Route::get('trip-tickets/{ticket}', TripTicketsShow::class)
+        ->name('trip-tickets.show');
 
-Route::get('account/users', AccountUsersIndex::class)
-    ->middleware(['auth'])
-    ->name('account.users');
+    Route::get('account/users', AccountUsersIndex::class)
+        ->name('account.users');
 
-Route::get('activity-logs', ActivityLogsIndex::class)
-    ->middleware(['auth'])
-    ->name('activity-logs.index');
+    Route::get('activity-logs', ActivityLogsIndex::class)
+        ->name('activity-logs.index');
 
-Route::get('approvals', ApprovalsAdminIndex::class)
-    ->middleware(['auth'])
-    ->name('approvals.admin');
+    Route::get('approvals', ApprovalsAdminIndex::class)
+        ->name('approvals.admin');
 
-Route::get('my-submissions', ApprovalsStaffIndex::class)
-    ->middleware(['auth'])
-    ->name('approvals.staff');
+    Route::get('my-submissions', ApprovalsStaffIndex::class)
+        ->name('approvals.staff');
 
-Route::view('profile', 'profile')
-    ->middleware(['auth'])
-    ->name('profile');
+    Route::view('profile', 'profile')
+        ->name('profile');
+});
 
 require __DIR__.'/auth.php';

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -28,13 +29,32 @@ new class extends Component
             throw $e;
         }
 
-        Auth::user()->update([
+        $user = Auth::user();
+
+        $user->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        $this->invalidateUserSessions($user);
+
+        Auth::logout();
+        session()->invalidate();
+        session()->regenerateToken();
 
         $this->reset('current_password', 'password', 'password_confirmation');
 
         $this->dispatch('password-updated');
+    }
+
+    private function invalidateUserSessions(User $user): void
+    {
+        if (config('session.driver') !== 'database') {
+            return;
+        }
+
+        \Illuminate\Support\Facades\DB::table(config('session.table', 'sessions'))
+            ->where('user_id', $user->getAuthIdentifier())
+            ->delete();
     }
 }; ?>
 

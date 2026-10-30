@@ -9,6 +9,7 @@ use App\Jobs\SendMaintenanceNotificationJob;
 use App\Models\NotificationLog;
 use App\Services\MaintenanceNotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -19,6 +20,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     public ?string $status = null;
@@ -89,9 +91,16 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function mount(): void
+    {
+        $this->authorize('viewAny', NotificationLog::class);
+    }
+
     #[Layout('layouts.app')]
     public function render(): View
     {
+        $this->authorize('viewAny', NotificationLog::class);
+
         return view('livewire.notifications.index', [
             'logs' => $this->getLogs(),
             'statusCounts' => $this->getStatusCounts(),
@@ -129,6 +138,8 @@ class Index extends Component
 
     public function runMaintenanceCheck(MaintenanceNotificationService $service): void
     {
+        $this->authorize('manage', NotificationLog::class);
+
         $result = $service->run();
 
         session()->flash('success', __(
@@ -146,6 +157,8 @@ class Index extends Component
      */
     public function exportCsv(): StreamedResponse
     {
+        $this->authorize('export', NotificationLog::class);
+
         $logs = $this->buildBaseQuery()
             ->when($this->status, function ($query): void {
                 $query->where('status', $this->status);
@@ -228,6 +241,8 @@ class Index extends Component
      */
     public function exportExcel(): BinaryFileResponse
     {
+        $this->authorize('export', NotificationLog::class);
+
         $logs = $this->buildBaseQuery()
             ->when($this->status, function ($query): void {
                 $query->where('status', $this->status);
@@ -267,12 +282,16 @@ class Index extends Component
 
     public function retry(int $id): void
     {
+        $this->authorize('manage', NotificationLog::class);
+
         $log = NotificationLog::find($id);
 
         if ($log === null) {
             session()->flash('error', __('Notification log not found.'));
             return;
         }
+
+        $this->authorize('retry', $log);
 
         if (! $log->canRetry()) {
             if ($log->status === NotificationLog::STATUS_SENT) {
@@ -310,12 +329,9 @@ class Index extends Component
      */
     public function markAsRead(int $id): void
     {
-        $log = NotificationLog::find($id);
+        $log = NotificationLog::query()->findOrFail($id);
 
-        if ($log === null) {
-            return;
-        }
-
+        $this->authorize('markAsRead', $log);
         $log->markAsRead();
     }
 
@@ -324,11 +340,17 @@ class Index extends Component
      */
     public function bulkRetry(): void
     {
+        $this->authorize('manage', NotificationLog::class);
+
         if ($this->selected === []) {
             return;
         }
 
         $logs = NotificationLog::whereIn('id', $this->selected)->get();
+
+        foreach ($logs as $log) {
+            $this->authorize('retry', $log);
+        }
 
         $retried = 0;
 
@@ -368,11 +390,21 @@ class Index extends Component
      */
     public function bulkArchive(): void
     {
+        $this->authorize('manage', NotificationLog::class);
+
         if ($this->selected === []) {
             return;
         }
 
-        $count = NotificationLog::whereIn('id', $this->selected)
+        $logs = NotificationLog::whereIn('id', $this->selected)->get();
+
+        foreach ($logs as $log) {
+            $this->authorize('archive', $log);
+        }
+
+        $count = $logs->whereNull('archived_at')->count();
+
+        NotificationLog::whereIn('id', $this->selected)
             ->whereNull('archived_at')
             ->update(['archived_at' => now()]);
 

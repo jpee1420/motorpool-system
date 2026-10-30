@@ -8,6 +8,7 @@ use App\Models\MaintenanceRecord;
 use App\Models\TripTicket;
 use App\Models\Vehicle;
 use Carbon\CarbonInterface;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -16,11 +17,15 @@ use Livewire\Component;
 
 class Index extends Component
 {
+    use AuthorizesRequests;
+
     public string $currentMonth;
     public string $view = 'calendar'; // 'calendar' or 'list'
 
     public function mount(): void
     {
+        $this->authorize('viewAny', Vehicle::class);
+
         $this->currentMonth = now()->startOfMonth()->toDateString();
     }
 
@@ -53,13 +58,23 @@ class Index extends Component
     #[Layout('layouts.app')]
     public function render(): View
     {
+        $this->authorize('viewAny', Vehicle::class);
+
         $month = Carbon::parse($this->currentMonth);
 
         $start = $month->copy()->startOfMonth();
         $end = $month->copy()->endOfMonth();
 
+        $user = auth()->user();
+
         // Get maintenance records
         $maintenanceRecords = MaintenanceRecord::with('vehicle')
+            ->when($user !== null && $user->isUser() && ! $user->isStaffOrAbove(), function ($query) use ($user): void {
+                $query->where(function ($subQuery) use ($user): void {
+                    $subQuery->where('assigned_driver_id', $user->id)
+                        ->orWhere('performed_by_user_id', $user->id);
+                });
+            })
             ->where(function ($query) use ($start, $end): void {
                 $query->whereBetween('performed_at', [$start, $end])
                     ->orWhereBetween('next_maintenance_due_at', [$start, $end]);
@@ -69,6 +84,14 @@ class Index extends Component
 
         // Get trip tickets
         $tripTickets = TripTicket::with('vehicle')
+            ->when($user !== null && $user->isUser() && ! $user->isStaffOrAbove(), function ($query) use ($user): void {
+                $query->where(function ($subQuery) use ($user): void {
+                    $subQuery->where('requested_by_user_id', $user->id)
+                        ->orWhereHas('vehicle', function ($vehicleQuery) use ($user): void {
+                            $vehicleQuery->where('user_id', $user->id);
+                        });
+                });
+            })
             ->where(function ($query) use ($start, $end): void {
                 $query->whereBetween('departure_at', [$start, $end])
                     ->orWhereBetween('return_at', [$start, $end]);
@@ -77,7 +100,11 @@ class Index extends Component
             ->get();
 
         // Get vehicles with upcoming maintenance due
-        $vehiclesDue = Vehicle::whereNotNull('next_maintenance_due_at')
+        $vehiclesDue = Vehicle::query()
+            ->when($user !== null && $user->isUser() && ! $user->isStaffOrAbove(), function ($query) use ($user): void {
+                $query->where('user_id', $user->id);
+            })
+            ->whereNotNull('next_maintenance_due_at')
             ->whereBetween('next_maintenance_due_at', [$start, $end])
             ->orderBy('next_maintenance_due_at')
             ->get();

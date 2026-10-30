@@ -63,6 +63,12 @@ class AdminIndex extends Component
 
     public function openReview(int $id, string $action): void
     {
+        $request = ApprovalRequest::find($id);
+
+        if ($request === null || ! auth()->user()?->can('review', $request)) {
+            abort(403);
+        }
+
         $this->reviewingId = $id;
         $this->reviewAction = $action;
         $this->reviewNotes = '';
@@ -151,6 +157,12 @@ class AdminIndex extends Component
             return null;
         }
 
-        return ApprovalRequest::with('requester')->find($this->reviewingId);
+        $request = ApprovalRequest::with('requester')->find($this->reviewingId);
+
+        if ($request !== null) {
+            $this->authorize('view', $request);
+        }
+
+        return $request;
     }
 }

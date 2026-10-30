@@ -18,4 +18,9 @@ class ActivityLogPolicy
     {
         return $user->isActive() && $user->isStaffOrAbove();
     }
+
+    public function delete(User $user, ActivityLog $log): bool
+    {
+        return $user->isActive() && $user->isAdmin();
+    }
 }

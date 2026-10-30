@@ -2,6 +2,10 @@
 
 use App\Models\User;
 use App\Notifications\PasswordResetRequestNotification;
+use Illuminate\Auth\Events\Lockout;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
@@ -20,6 +24,8 @@ new #[Layout('layouts.guest')] class extends Component
             'email' => ['required', 'string', 'email', 'max:255'],
         ]);
 
+        $this->ensureIsNotRateLimited();
+
         $user = User::where('email', $this->email)->first();
 
         if ($user !== null) {
@@ -33,10 +39,35 @@ new #[Layout('layouts.guest')] class extends Component
             }
         }
 
+        RateLimiter::hit($this->throttleKey());
+
         $this->reset('email');
 
         // Generic message that does not confirm whether the email exists
         session()->flash('status', __('If an account exists for that email, our staff will review your request and contact you.'));
+    }
+
+    protected function ensureIsNotRateLimited(): void
+    {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+            return;
+        }
+
+        event(new Lockout(request()));
+
+        $seconds = RateLimiter::availableIn($this->throttleKey());
+
+        throw ValidationException::withMessages([
+            'email' => trans('auth.throttle', [
+                'seconds' => $seconds,
+                'minutes' => ceil($seconds / 60),
+            ]),
+        ]);
+    }
+
+    protected function throttleKey(): string
+    {
+        return Str::transliterate(Str::lower($this->email).'|'.request()->ip());
     }
 }; ?>
 

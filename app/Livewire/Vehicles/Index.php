@@ -11,6 +11,7 @@ use App\Models\Vehicle;
 use App\Services\ApprovalRequestService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -78,7 +79,24 @@ class Index extends Component
             'driver_operator' => ['nullable', 'string', 'max:255'],
             'contact_number' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'string', 'in:operational,non-operational,maintenance'],
-            'photo' => ['nullable', 'image', 'max:5120', 'mimes:jpg,jpeg,png,webp'],
+            'photo' => [
+                'nullable',
+                'file',
+                'image',
+                'max:5120',
+                'mimes:jpg,jpeg,png,webp',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if (! $value instanceof UploadedFile || ! is_string($value->getMimeType())) {
+                        return;
+                    }
+
+                    $content = @file_get_contents($value->getRealPath());
+
+                    if ($content === false || ! is_resource(@imagecreatefromstring($content))) {
+                        $fail(__('The photo must be a valid image file.'));
+                    }
+                },
+            ],
             'assigned_user_id' => ['nullable', 'integer', 'exists:users,id'],
         ];
     }
@@ -204,6 +222,7 @@ class Index extends Component
         $photoPath = null;
 
         if ($this->photo) {
+            $this->photo = $this->stripImageMetadata($this->photo);
             $photoPath = $this->photo->store('vehicles', 'public');
         }
 
@@ -297,6 +316,47 @@ class Index extends Component
         $this->status = 'operational';
         $this->assigned_user_id = null;
         $this->photo = null;
+    }
+
+    private function stripImageMetadata(UploadedFile $file): UploadedFile
+    {
+        $contents = @file_get_contents($file->getRealPath());
+
+        if ($contents === false) {
+            return $file;
+        }
+
+        $image = @imagecreatefromstring($contents);
+
+        if ($image === false) {
+            return $file;
+        }
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'vehicle-photo-');
+
+        if ($tempPath === false) {
+            return $file;
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+
+        if ($extension === 'png') {
+            imagepng($image, $tempPath, 9);
+        } elseif ($extension === 'webp') {
+            imagewebp($image, $tempPath, 90);
+        } else {
+            imagejpeg($image, $tempPath, 90);
+        }
+
+        imagedestroy($image);
+
+        return new UploadedFile(
+            $tempPath,
+            $file->getClientOriginalName(),
+            $file->getClientMimeType() ?: 'image/jpeg',
+            null,
+            true,
+        );
     }
 
     public function exportCsv(): StreamedResponse

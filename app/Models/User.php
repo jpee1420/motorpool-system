@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
@@ -52,6 +53,23 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    protected static function booted(): void
+    {
+        static::updated(function (self $user): void {
+            if (! $user->wasChanged('password')) {
+                return;
+            }
+
+            if (config('session.driver') !== 'database') {
+                return;
+            }
+
+            DB::table(config('session.table', 'sessions'))
+                ->where('user_id', $user->getAuthIdentifier())
+                ->delete();
+        });
+    }
 
     /**
      * Get the attributes that should be cast.

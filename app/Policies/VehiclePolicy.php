@@ -22,7 +22,15 @@ class VehiclePolicy
      */
     public function view(User $user, Vehicle $vehicle): bool
     {
-        return $user->isActive();
+        if (! $user->isActive()) {
+            return false;
+        }
+
+        if ($user->isStaffOrAbove()) {
+            return true;
+        }
+
+        return (int) $vehicle->user_id === (int) $user->id;
     }
 
     /**

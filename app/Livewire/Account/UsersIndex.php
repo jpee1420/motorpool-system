@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Notifications\AccountApprovedNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
@@ -99,11 +100,9 @@ class UsersIndex extends Component
 
     public function confirmApprove(int $userId): void
     {
-        $user = User::query()->find($userId);
+        $this->authorize('manage', User::class);
 
-        if ($user === null) {
-            return;
-        }
+        $user = User::query()->findOrFail($userId);
 
         $this->confirmingUserId = $user->id;
         $this->confirmingUserName = $user->name;
@@ -112,11 +111,9 @@ class UsersIndex extends Component
 
     public function confirmReject(int $userId): void
     {
-        $user = User::query()->find($userId);
+        $this->authorize('manage', User::class);
 
-        if ($user === null) {
-            return;
-        }
+        $user = User::query()->findOrFail($userId);
 
         $this->confirmingUserId = $user->id;
         $this->confirmingUserName = $user->name;
@@ -130,6 +127,8 @@ class UsersIndex extends Component
 
     public function performConfirmation(): void
     {
+        $this->authorize('manage', User::class);
+
         if ($this->confirmingUserId === null || $this->confirmingAction === null) {
             return;
         }
@@ -158,11 +157,7 @@ class UsersIndex extends Component
             return;
         }
 
-        $user = User::query()->find($userId);
-
-        if ($user === null) {
-            return;
-        }
+        $user = User::query()->findOrFail($userId);
 
         $user->update(['role' => $role]);
     }
@@ -178,11 +173,7 @@ class UsersIndex extends Component
             return;
         }
 
-        $user = User::query()->find($userId);
-
-        if ($user === null) {
-            return;
-        }
+        $user = User::query()->findOrFail($userId);
 
         $user->update([
             'status' => $user->status === User::STATUS_ACTIVE ? User::STATUS_DISABLED : User::STATUS_ACTIVE,
@@ -193,9 +184,9 @@ class UsersIndex extends Component
     {
         $this->authorize('manage', User::class);
 
-        $user = User::query()->find($userId);
+        $user = User::query()->findOrFail($userId);
 
-        if ($user === null || ! $user->isPending()) {
+        if (! $user->isPending()) {
             return;
         }
 
@@ -215,9 +206,9 @@ class UsersIndex extends Component
     {
         $this->authorize('manage', User::class);
 
-        $user = User::query()->find($userId);
+        $user = User::query()->findOrFail($userId);
 
-        if ($user === null || ! $user->isPending()) {
+        if (! $user->isPending()) {
             return;
         }
 
@@ -265,6 +256,8 @@ class UsersIndex extends Component
 
     public function generateNewUserPassword(): void
     {
+        $this->authorize('manage', User::class);
+
         $password = Str::random(12);
         $this->newUserPassword = $password;
         $this->newUserPasswordConfirmation = $password;
@@ -304,11 +297,9 @@ class UsersIndex extends Component
 
     public function openPasswordResetModal(int $userId): void
     {
-        $user = User::query()->find($userId);
+        $this->authorize('manage', User::class);
 
-        if ($user === null) {
-            return;
-        }
+        $user = User::query()->findOrFail($userId);
 
         $this->resetPasswordUserId = $user->id;
         $this->resetPasswordUserName = $user->name;
@@ -324,6 +315,8 @@ class UsersIndex extends Component
 
     public function generateRandomPassword(): void
     {
+        $this->authorize('manage', User::class);
+
         $password = Str::random(12);
         $this->newPassword = $password;
         $this->newPasswordConfirmation = $password;
@@ -333,6 +326,10 @@ class UsersIndex extends Component
     {
         $this->authorize('manage', User::class);
 
+        if ($this->resetPasswordUserId === null) {
+            return;
+        }
+
         $this->validate([
             'newPassword' => ['required', 'string', 'min:8', 'same:newPasswordConfirmation'],
         ], [
@@ -340,15 +337,13 @@ class UsersIndex extends Component
             'newPassword.min' => __('The password must be at least 8 characters.'),
         ]);
 
-        $user = User::query()->find($this->resetPasswordUserId);
-
-        if ($user === null) {
-            return;
-        }
+        $user = User::query()->findOrFail($this->resetPasswordUserId);
 
         $user->update([
             'password' => Hash::make($this->newPassword),
         ]);
+
+        $this->invalidateUserSessions($user);
 
         $this->closePasswordResetModal();
 
@@ -386,5 +381,16 @@ class UsersIndex extends Component
             ->orderBy($this->sortField, $this->sortDirection)
             ->orderBy('name')
             ->paginate(15);
+    }
+
+    private function invalidateUserSessions(User $user): void
+    {
+        if (config('session.driver') !== 'database') {
+            return;
+        }
+
+        DB::table(config('session.table', 'sessions'))
+            ->where('user_id', $user->getAuthIdentifier())
+            ->delete();
     }
 }

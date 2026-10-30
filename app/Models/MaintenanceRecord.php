@@ -15,13 +15,10 @@ class MaintenanceRecord extends Model
 
     protected $fillable = [
         'vehicle_id',
-        'assigned_driver_id',
         'performed_by_user_id',
-        'performed_by',
         'performed_at',
         'odometer_reading',
         'description_of_work',
-        'checklist',
         'personnel_labor_cost',
         'materials_cost_total',
         'total_cost',
@@ -35,7 +32,6 @@ class MaintenanceRecord extends Model
         return [
             'performed_at' => 'datetime',
             'next_maintenance_due_at' => 'date',
-            'checklist' => 'array',
         ];
     }
 
@@ -47,14 +43,6 @@ class MaintenanceRecord extends Model
     public function performedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'performed_by_user_id');
-    }
-
-    /**
-     * The driver assigned to the vehicle at the time this record was created.
-     */
-    public function assignedDriver(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'assigned_driver_id');
     }
 
     public function materials(): HasMany

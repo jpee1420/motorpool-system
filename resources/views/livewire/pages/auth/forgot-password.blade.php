@@ -1,7 +1,6 @@
 <?php
 
-use App\Models\User;
-use App\Notifications\PasswordResetRequestNotification;
+use Illuminate\Support\Facades\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
@@ -10,45 +9,42 @@ new #[Layout('layouts.guest')] class extends Component
     public string $email = '';
 
     /**
-     * Send a password reset request to admins/staff.
-     *
-     * Uses generic responses so we do not reveal whether an email exists.
+     * Send a password reset link to the provided email address.
      */
-    public function sendPasswordResetRequest(): void
+    public function sendPasswordResetLink(): void
     {
         $this->validate([
-            'email' => ['required', 'string', 'email', 'max:255'],
+            'email' => ['required', 'string', 'email'],
         ]);
 
-        $user = User::where('email', $this->email)->first();
+        // We will send the password reset link to this user. Once we have attempted
+        // to send the link, we will examine the response then see the message we
+        // need to show to the user. Finally, we'll send out a proper response.
+        $status = Password::sendResetLink(
+            $this->only('email')
+        );
 
-        if ($user !== null) {
-            // Notify all admins and staff about the password reset request
-            $adminsAndStaff = User::whereIn('role', [User::ROLE_ADMIN, User::ROLE_STAFF])
-                ->where('status', User::STATUS_ACTIVE)
-                ->get();
+        if ($status != Password::RESET_LINK_SENT) {
+            $this->addError('email', __($status));
 
-            foreach ($adminsAndStaff as $admin) {
-                $admin->notify(new PasswordResetRequestNotification($user));
-            }
+            return;
         }
 
         $this->reset('email');
 
-        // Generic message that does not confirm whether the email exists
-        session()->flash('status', __('If an account exists for that email, our staff will review your request and contact you.'));
+        session()->flash('status', __($status));
     }
 }; ?>
 
 <div>
     <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? Enter your email address below and our staff will reset your password for you.') }}
+        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
     </div>
 
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form wire:submit="sendPasswordResetRequest">
+    <form wire:submit="sendPasswordResetLink">
         <!-- Email Address -->
         <div>
             <x-input-label for="email" :value="__('Email')" />
@@ -56,12 +52,9 @@ new #[Layout('layouts.guest')] class extends Component
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-between mt-4">
-            <a href="{{ route('login') }}" class="text-sm text-indigo-600 hover:text-indigo-500 font-medium" wire:navigate>
-                {{ __('Back to login') }}
-            </a>
+        <div class="flex items-center justify-end mt-4">
             <x-primary-button>
-                {{ __('Request Password Reset') }}
+                {{ __('Email Password Reset Link') }}
             </x-primary-button>
         </div>
     </form>

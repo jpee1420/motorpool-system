@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Forms;
 
-use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -30,21 +29,6 @@ class LoginForm extends Form
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
-
-        // Check if user exists and is pending approval before attempting login
-        $user = User::where('email', $this->email)->first();
-
-        if ($user !== null && $user->isPending()) {
-            throw ValidationException::withMessages([
-                'form.email' => __('Your account is pending approval. Please wait for an administrator to approve your registration.'),
-            ]);
-        }
-
-        if ($user !== null && $user->status === User::STATUS_DISABLED) {
-            throw ValidationException::withMessages([
-                'form.email' => __('Your account has been disabled. Please contact an administrator.'),
-            ]);
-        }
 
         if (! Auth::attempt($this->only(['email', 'password']), $this->remember)) {
             RateLimiter::hit($this->throttleKey());

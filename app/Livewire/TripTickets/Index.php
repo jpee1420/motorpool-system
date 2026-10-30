@@ -4,18 +4,28 @@ declare(strict_types=1);
 
 namespace App\Livewire\TripTickets;
 
+use App\Exports\TripTicketsExport;
+use App\Models\ApprovalRequest;
+use App\Models\NotificationLog;
 use App\Models\TripTicket;
+use App\Models\User;
 use App\Models\Vehicle;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     public ?int $vehicleFilter = null;
@@ -23,17 +33,17 @@ class Index extends Component
     public ?string $search = null;
 
     public bool $showModal = false;
+
+    #[Locked]
     public ?int $editingId = null;
 
     public ?int $vehicle_id = null;
     public ?string $driver_name = null;
     public ?string $destination = null;
     public ?string $purpose = null;
-    public ?string $departure_at = null;
-    public ?string $return_at = null;
+    public ?string $travel_date = null;
     public ?int $odometer_start = null;
     public ?int $odometer_end = null;
-    public string $form_status = 'pending';
 
     protected function rules(): array
     {
@@ -42,11 +52,9 @@ class Index extends Component
             'driver_name' => ['required', 'string', 'max:255'],
             'destination' => ['required', 'string', 'max:255'],
             'purpose' => ['required', 'string', 'max:255'],
-            'departure_at' => ['required', 'date'],
-            'return_at' => ['nullable', 'date'],
+            'travel_date' => ['required', 'date'],
             'odometer_start' => ['nullable', 'integer', 'min:0'],
             'odometer_end' => ['nullable', 'integer', 'min:0'],
-            'form_status' => ['required', 'string'],
         ];
     }
 
@@ -67,6 +75,8 @@ class Index extends Component
 
     public function openCreateModal(): void
     {
+        $this->authorize('create', TripTicket::class);
+
         $this->resetForm();
         $this->showModal = true;
     }
@@ -75,56 +85,130 @@ class Index extends Component
     {
         $ticket = TripTicket::findOrFail($id);
 
+        $this->authorize('update', $ticket);
+
         $this->editingId = $ticket->id;
         $this->vehicle_id = $ticket->vehicle_id;
         $this->driver_name = $ticket->driver_name;
         $this->destination = $ticket->destination;
         $this->purpose = $ticket->purpose;
-        $this->departure_at = $ticket->departure_at?->format('Y-m-d\TH:i');
-        $this->return_at = $ticket->return_at?->format('Y-m-d\TH:i');
+        $this->travel_date = $ticket->departure_at?->format('Y-m-d');
         $this->odometer_start = $ticket->odometer_start;
         $this->odometer_end = $ticket->odometer_end;
-        $this->form_status = $ticket->status;
 
         $this->showModal = true;
     }
 
     public function save(): void
     {
+        $user = auth()->user();
+        $isAdmin = $user?->isAdmin() ?? false;
+        $ticket = null;
+
+        if ($this->editingId) {
+            $ticket = TripTicket::findOrFail($this->editingId);
+            $this->authorize('update', $ticket);
+        } else {
+            $this->authorize('create', TripTicket::class);
+        }
+
         $this->validate();
 
-        $departureAt = Carbon::parse($this->departure_at);
-        $returnAt = $this->return_at ? Carbon::parse($this->return_at) : null;
+        $travelDate = Carbon::parse($this->travel_date);
 
         $data = [
             'vehicle_id' => $this->vehicle_id,
             'driver_name' => $this->driver_name ?? '',
             'destination' => $this->destination ?? '',
             'purpose' => $this->purpose ?? '',
-            'departure_at' => $departureAt,
-            'return_at' => $returnAt,
+            'departure_at' => $travelDate->toDateTimeString(),
             'odometer_start' => $this->odometer_start,
             'odometer_end' => $this->odometer_end,
-            'status' => $this->form_status,
         ];
 
-        if ($this->editingId) {
-            $ticket = TripTicket::findOrFail($this->editingId);
-            $ticket->update($data);
+        if ($isAdmin) {
+            if ($this->editingId) {
+                $ticket->update($data);
+                session()->flash('success', __('Trip ticket updated successfully.'));
+            } else {
+                $newTicket = TripTicket::create(array_merge($data, [
+                    'requested_by_user_id' => Auth::id(),
+                    'status' => 'pending',
+                    'notes' => null,
+                ]));
 
-            session()->flash('success', __('Trip ticket updated successfully.'));
+                $this->logTripTicketNotification($newTicket);
+                session()->flash('success', __('Trip ticket created successfully.'));
+            }
         } else {
-            TripTicket::create(array_merge($data, [
-                'requested_by_user_id' => Auth::id(),
-                'notes' => null,
-            ]));
+            $originalData = null;
 
-            session()->flash('success', __('Trip ticket created successfully.'));
+            if ($this->editingId && $ticket) {
+                $originalData = $ticket->only(array_keys($data));
+            }
+
+            $vehicle = Vehicle::find($this->vehicle_id);
+
+            ApprovalRequest::create([
+                'requester_user_id' => $user->id,
+                'action' => $this->editingId ? ApprovalRequest::ACTION_UPDATE : ApprovalRequest::ACTION_CREATE,
+                'subject_type' => 'TripTicket',
+                'subject_id' => $this->editingId,
+                'subject_label' => 'Trip to ' . ($this->destination ?? 'destination') . ' (' . ($vehicle?->plate_number ?? 'vehicle') . ')',
+                'original_data' => $originalData,
+                'proposed_data' => array_merge($data, $this->editingId ? [] : [
+                    'requested_by_user_id' => $user->id,
+                    'status' => 'pending',
+                    'notes' => null,
+                ]),
+            ]);
+
+            session()->flash('success', __('Your submission has been sent for admin approval.'));
         }
 
         $this->resetForm();
         $this->showModal = false;
         $this->resetPage();
+    }
+
+    private function logTripTicketNotification(TripTicket $ticket): void
+    {
+        $notifiableUsers = User::query()
+            ->where('status', User::STATUS_ACTIVE)
+            ->whereIn('role', [User::ROLE_ADMIN, User::ROLE_STAFF])
+            ->get();
+
+        if ($notifiableUsers->isEmpty()) {
+            return;
+        }
+
+        $meta = [
+            'trip_ticket_id' => $ticket->id,
+            'destination' => $ticket->destination,
+            'purpose' => $ticket->purpose,
+            'departure_at' => $ticket->departure_at?->toDateTimeString(),
+            'driver_name' => $ticket->driver_name,
+            'requested_by' => $ticket->requestedBy?->name,
+        ];
+
+        foreach ($notifiableUsers as $user) {
+            NotificationLog::create([
+                'vehicle_id' => $ticket->vehicle_id,
+                'maintenance_record_id' => null,
+                'user_id' => $user->id,
+                'channel' => NotificationLog::CHANNEL_IN_APP,
+                'type' => NotificationLog::TYPE_TRIP_TICKET_CREATED,
+                'trigger_reason' => null,
+                'meta' => $meta,
+                'recipient_name' => $user->name,
+                'recipient_contact' => null,
+                'sent_at' => now(),
+                'status' => NotificationLog::STATUS_SENT,
+                'error_message' => null,
+                'retry_count' => 0,
+                'max_retries_reached' => false,
+            ]);
+        }
     }
 
     private function resetForm(): void
@@ -134,11 +218,14 @@ class Index extends Component
         $this->driver_name = null;
         $this->destination = null;
         $this->purpose = null;
-        $this->departure_at = null;
-        $this->return_at = null;
+        $this->travel_date = null;
         $this->odometer_start = null;
         $this->odometer_end = null;
-        $this->form_status = 'pending';
+    }
+
+    public function mount(): void
+    {
+        $this->authorize('viewAny', TripTicket::class);
     }
 
     #[Layout('layouts.app')]
@@ -147,6 +234,8 @@ class Index extends Component
         return view('livewire.trip-tickets.index', [
             'tickets' => $this->getTickets(),
             'vehicles' => Vehicle::orderBy('plate_number')->get(),
+            'canCreate' => auth()->user()?->can('create', TripTicket::class) ?? false,
+            'canExport' => auth()->user()?->can('export', TripTicket::class) ?? false,
         ]);
     }
 
@@ -174,5 +263,95 @@ class Index extends Component
             })
             ->orderByDesc('departure_at')
             ->paginate(15);
+    }
+
+    public function exportCsv(): StreamedResponse
+    {
+        $this->authorize('export', TripTicket::class);
+
+        $tickets = $this->getExportQuery()->get();
+
+        $filename = 'trip_tickets_' . now()->format('Y-m-d_His') . '.csv';
+
+        return response()->streamDownload(function () use ($tickets): void {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [
+                'ID',
+                'Vehicle',
+                'Driver',
+                'Destination',
+                'Purpose',
+                'Departure',
+                'Return',
+                'Odometer Start',
+                'Odometer End',
+                'Distance',
+                'Status',
+                'Requested By',
+            ]);
+
+            foreach ($tickets as $ticket) {
+                $distance = ($ticket->odometer_end && $ticket->odometer_start)
+                    ? $ticket->odometer_end - $ticket->odometer_start
+                    : null;
+
+                fputcsv($handle, [
+                    $ticket->id,
+                    $ticket->vehicle?->plate_number ?? '',
+                    $ticket->driver_name,
+                    $ticket->destination,
+                    $ticket->purpose,
+                    $ticket->departure_at?->format('Y-m-d H:i'),
+                    $ticket->return_at?->format('Y-m-d H:i'),
+                    $ticket->odometer_start,
+                    $ticket->odometer_end,
+                    $distance,
+                    $ticket->status,
+                    $ticket->requestedBy?->name ?? '',
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
+    public function exportExcel(): BinaryFileResponse
+    {
+        $this->authorize('export', TripTicket::class);
+
+        $tickets = $this->getExportQuery()->get();
+
+        $filename = 'trip_tickets_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(new TripTicketsExport($tickets), $filename);
+    }
+
+    private function getExportQuery()
+    {
+        return TripTicket::with(['vehicle', 'requestedBy'])
+            ->when($this->vehicleFilter, function ($query): void {
+                $query->where('vehicle_id', $this->vehicleFilter);
+            })
+            ->when($this->status, function ($query): void {
+                $query->where('status', $this->status);
+            })
+            ->when($this->search, function ($query): void {
+                $search = '%' . $this->search . '%';
+
+                $query->where(function ($subQuery) use ($search): void {
+                    $subQuery
+                        ->where('driver_name', 'like', $search)
+                        ->orWhere('destination', 'like', $search)
+                        ->orWhere('purpose', 'like', $search)
+                        ->orWhereHas('vehicle', function ($vehicleQuery) use ($search): void {
+                            $vehicleQuery->where('plate_number', 'like', $search);
+                        });
+                });
+            })
+            ->orderByDesc('departure_at');
     }
 }

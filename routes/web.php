@@ -1,18 +1,28 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Livewire\ActivityLogs\Index as ActivityLogsIndex;
+use App\Livewire\Approvals\AdminIndex as ApprovalsAdminIndex;
+use App\Livewire\Approvals\StaffIndex as ApprovalsStaffIndex;
 use App\Livewire\Account\UsersIndex as AccountUsersIndex;
 use App\Livewire\Calendar\Index as CalendarIndex;
 use App\Livewire\Maintenance\Index as MaintenanceIndex;
 use App\Livewire\Maintenance\Show as MaintenanceShow;
 use App\Livewire\Notifications\Index as NotificationsIndex;
+use App\Livewire\Repair\Index as RepairIndex;
+use App\Livewire\Repair\Show as RepairShow;
 use App\Livewire\TripTickets\Index as TripTicketsIndex;
 use App\Livewire\TripTickets\Show as TripTicketsShow;
 use App\Livewire\Vehicles\Index as VehiclesIndex;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
-Route::view('/', 'welcome');
+Route::get('/', function () {
+    if (Auth::check()) {
+        return redirect()->route('dashboard');
+    }
+    return view('welcome');
+});
 
 Route::post('/logout', function () {
     Auth::logout();
@@ -22,7 +32,7 @@ Route::post('/logout', function () {
 })->name('logout');
 
 Route::get('dashboard', DashboardController::class)
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth'])
     ->name('dashboard');
 
 Route::get('vehicles', VehiclesIndex::class)
@@ -36,6 +46,14 @@ Route::get('maintenance', MaintenanceIndex::class)
 Route::get('maintenance/{record}', MaintenanceShow::class)
     ->middleware(['auth'])
     ->name('maintenance.show');
+
+Route::get('repair', RepairIndex::class)
+    ->middleware(['auth'])
+    ->name('repair.index');
+
+Route::get('repair/{record}', RepairShow::class)
+    ->middleware(['auth'])
+    ->name('repair.show');
 
 Route::get('notifications', NotificationsIndex::class)
     ->middleware(['auth'])
@@ -56,6 +74,18 @@ Route::get('trip-tickets/{ticket}', TripTicketsShow::class)
 Route::get('account/users', AccountUsersIndex::class)
     ->middleware(['auth'])
     ->name('account.users');
+
+Route::get('activity-logs', ActivityLogsIndex::class)
+    ->middleware(['auth'])
+    ->name('activity-logs.index');
+
+Route::get('approvals', ApprovalsAdminIndex::class)
+    ->middleware(['auth'])
+    ->name('approvals.admin');
+
+Route::get('my-submissions', ApprovalsStaffIndex::class)
+    ->middleware(['auth'])
+    ->name('approvals.staff');
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])

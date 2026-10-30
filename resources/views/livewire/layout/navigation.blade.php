@@ -24,46 +24,69 @@ new class extends Component
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" wire:navigate>
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                        <span class="hidden sm:inline-block">
+                            <x-application-logo class="block h-8 w-auto" />
+                        </span>
+                        <span class="inline-block sm:hidden">
+                            <x-application-logo variant="mobile" class="block h-8 w-auto" />
+                        </span>
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
+                @php
+                    $isStaffOrAbove = auth()->user()?->isStaffOrAbove() ?? false;
+                @endphp
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
                     <x-nav-link :href="route('vehicles.index')" :active="request()->routeIs('vehicles.*')" wire:navigate>
-                        {{ __('Vehicles') }}
+                        {{ $isStaffOrAbove ? __('Vehicles/Equipments') : __('My Vehicles') }}
                     </x-nav-link>
 
                     <x-nav-link :href="route('maintenance.index')" :active="request()->routeIs('maintenance.*')" wire:navigate>
                         {{ __('Maintenance') }}
                     </x-nav-link>
 
-                    <x-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')" wire:navigate>
-                        {{ __('Notifications') }}
+                    <x-nav-link :href="route('repair.index')" :active="request()->routeIs('repair.*')" wire:navigate>
+                        {{ __('Repair') }}
                     </x-nav-link>
 
-                    <x-nav-link :href="route('calendar.index')" :active="request()->routeIs('calendar.*')" wire:navigate>
-                        {{ __('Calendar') }}
-                    </x-nav-link>
+                    @if ($isStaffOrAbove)
+                        <x-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')" wire:navigate>
+                            {{ __('Notifications') }}
+                        </x-nav-link>
 
-                    <x-nav-link :href="route('trip-tickets.index')" :active="request()->routeIs('trip-tickets.*')" wire:navigate>
-                        {{ __('Trip tickets') }}
-                    </x-nav-link>
+                        <x-nav-link :href="route('calendar.index')" :active="request()->routeIs('calendar.*')" wire:navigate>
+                            {{ __('Calendar') }}
+                        </x-nav-link>
 
-                    @if (auth()->user()?->role === 'admin')
+                        <x-nav-link :href="route('trip-tickets.index')" :active="request()->routeIs('trip-tickets.*')" wire:navigate>
+                            {{ __('Trip tickets') }}
+                        </x-nav-link>
+                    @endif
+
+                    @if (auth()->user()?->isAdmin())
                         <x-nav-link :href="route('account.users')" :active="request()->routeIs('account.users')" wire:navigate>
                             {{ __('Users') }}
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('approvals.admin')" :active="request()->routeIs('approvals.admin')" wire:navigate>
+                            {{ __('Approvals') }}
                         </x-nav-link>
                     @endif
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <!-- Notification Bell & Settings Dropdown -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6 sm:gap-2">
+                <!-- Notification Bell -->
+                @if (auth()->user()?->isStaffOrAbove())
+                    <livewire:notifications.bell />
+                @endif
+
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -82,6 +105,16 @@ new class extends Component
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        @if (auth()->user()?->isStaffOrAbove())
+                            <x-dropdown-link :href="route('approvals.staff')" wire:navigate>
+                                {{ __('My submissions') }}
+                            </x-dropdown-link>
+
+                            <x-dropdown-link :href="route('activity-logs.index')" wire:navigate>
+                                {{ __('Activity log') }}
+                            </x-dropdown-link>
+                        @endif
+
                         <!-- Authentication -->
                         <button wire:click="logout" class="w-full text-start">
                             <x-dropdown-link>
@@ -92,8 +125,13 @@ new class extends Component
                 </x-dropdown>
             </div>
 
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
+            <!-- Mobile: Bell + Hamburger -->
+            <div class="-me-2 flex items-center gap-1 sm:hidden">
+                <!-- Mobile Notification Bell -->
+                @if (auth()->user()?->isStaffOrAbove())
+                    <livewire:notifications.bell />
+                @endif
+
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -112,28 +150,38 @@ new class extends Component
             </x-responsive-nav-link>
 
             <x-responsive-nav-link :href="route('vehicles.index')" :active="request()->routeIs('vehicles.*')" wire:navigate>
-                {{ __('Vehicles') }}
+                {{ auth()->user()?->isStaffOrAbove() ? __('Vehicles/Equipments') : __('My Vehicles') }}
             </x-responsive-nav-link>
 
             <x-responsive-nav-link :href="route('maintenance.index')" :active="request()->routeIs('maintenance.*')" wire:navigate>
                 {{ __('Maintenance') }}
             </x-responsive-nav-link>
 
-            <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')" wire:navigate>
-                {{ __('Notifications') }}
+            <x-responsive-nav-link :href="route('repair.index')" :active="request()->routeIs('repair.*')" wire:navigate>
+                {{ __('Repair') }}
             </x-responsive-nav-link>
 
-            <x-responsive-nav-link :href="route('calendar.index')" :active="request()->routeIs('calendar.*')" wire:navigate>
-                {{ __('Calendar') }}
-            </x-responsive-nav-link>
+            @if (auth()->user()?->isStaffOrAbove())
+                <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')" wire:navigate>
+                    {{ __('Notifications') }}
+                </x-responsive-nav-link>
 
-            <x-responsive-nav-link :href="route('trip-tickets.index')" :active="request()->routeIs('trip-tickets.*')" wire:navigate>
-                {{ __('Trip tickets') }}
-            </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('calendar.index')" :active="request()->routeIs('calendar.*')" wire:navigate>
+                    {{ __('Calendar') }}
+                </x-responsive-nav-link>
 
-            @if (auth()->user()?->role === 'admin')
+                <x-responsive-nav-link :href="route('trip-tickets.index')" :active="request()->routeIs('trip-tickets.*')" wire:navigate>
+                    {{ __('Trip tickets') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if (auth()->user()?->isAdmin())
                 <x-responsive-nav-link :href="route('account.users')" :active="request()->routeIs('account.users')" wire:navigate>
                     {{ __('Users') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('approvals.admin')" :active="request()->routeIs('approvals.admin')" wire:navigate>
+                    {{ __('Approvals') }}
                 </x-responsive-nav-link>
             @endif
         </div>
@@ -149,6 +197,16 @@ new class extends Component
                 <x-responsive-nav-link :href="route('profile')" wire:navigate>
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
+
+                @if (auth()->user()?->isStaffOrAbove())
+                    <x-responsive-nav-link :href="route('approvals.staff')" wire:navigate>
+                        {{ __('My submissions') }}
+                    </x-responsive-nav-link>
+
+                    <x-responsive-nav-link :href="route('activity-logs.index')" wire:navigate>
+                        {{ __('Activity log') }}
+                    </x-responsive-nav-link>
+                @endif
 
                 <!-- Authentication -->
                 <button wire:click="logout" class="w-full text-start">

@@ -1,21 +1,42 @@
-<div class="py-10">
+<div class="py-10" x-data="{ confirmOpen: false }">
+    {{-- Delete Confirmation Modal --}}
+    @can('delete', $record)
+        <x-confirm-modal
+            :title="__('Delete maintenance record')"
+            :description="__('Are you sure you want to delete this maintenance record? This action cannot be undone.')"
+            confirm-wire-click="delete"
+        />
+    @endcan
+
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">
                     {{ __('Maintenance detail') }}
                 </h1>
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="mt-1 text-sm text-gray-500 hidden sm:block">
                     {{ __('Review work done, costs, and materials for this maintenance record.') }}
                 </p>
             </div>
 
-            <a
-                href="{{ route('maintenance.index') }}"
-                class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-                {{ __('Back to maintenance list') }}
-            </a>
+            <div class="flex items-center gap-2">
+                @can('delete', $record)
+                    <button
+                        type="button"
+                        x-on:click.prevent="confirmOpen = true"
+                        class="inline-flex items-center rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100"
+                    >
+                        {{ __('Delete') }}
+                    </button>
+                @endcan
+
+                <a
+                    href="{{ route('maintenance.index') }}"
+                    class="inline-flex items-center rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                    {{ __('Back') }}
+                </a>
+            </div>
         </div>
 
         <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6 space-y-4">
@@ -39,8 +60,10 @@
                     <dd class="mt-1 text-gray-900">{{ $record->vehicle?->year ?? '—' }}</dd>
                 </div>
                 <div>
-                    <dt class="font-medium text-gray-500">{{ __('Driver / operator') }}</dt>
-                    <dd class="mt-1 text-gray-900">{{ $record->vehicle?->driver_operator ?? '—' }}</dd>
+                    <dt class="font-medium text-gray-500">{{ __('Driver / Operator') }}</dt>
+                    <dd class="mt-1 text-gray-900">
+                        {{ $record->assignedDriver?->name ?? $record->vehicle?->driver_operator ?? '—' }}
+                    </dd>
                 </div>
                 <div>
                     <dt class="font-medium text-gray-500">{{ __('Current odometer') }}</dt>
@@ -73,7 +96,7 @@
                 </div>
                 <div>
                     <dt class="font-medium text-gray-500">{{ __('Performed by') }}</dt>
-                    <dd class="mt-1 text-gray-900">{{ $record->performedBy?->name ?? '—' }}</dd>
+                    <dd class="mt-1 text-gray-900">{{ $record->performed_by ?: ($record->performedBy?->name ?? '—') }}</dd>
                 </div>
                 <div>
                     <dt class="font-medium text-gray-500">{{ __('Odometer reading') }}</dt>
@@ -125,6 +148,56 @@
             @endif
         </div>
 
+        @if (!empty($record->checklist))
+            <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6">
+                <h2 class="text-sm font-semibold text-gray-900 mb-4">
+                    {{ __('22 Point Checklist') }}
+                </h2>
+
+                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-8">#</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">{{ __('Item') }}</th>
+                                <th class="px-3 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 w-20">{{ __('Status') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            @php
+                                $checklistItems = \App\Livewire\Maintenance\Index::CHECKLIST_ITEMS;
+                            @endphp
+                            @foreach ($checklistItems as $index => $item)
+                                <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                                    <td class="px-3 py-2 text-gray-500 text-center">{{ $index + 1 }}</td>
+                                    <td class="px-3 py-2 text-gray-900">{{ $item }}</td>
+                                    <td class="px-3 py-2 text-center">
+                                        @php
+                                            $status = $record->checklist[$item] ?? null;
+                                            $statusClasses = [
+                                                'good' => 'bg-green-100 text-green-800',
+                                                'fair' => 'bg-yellow-100 text-yellow-800',
+                                                'bad' => 'bg-red-100 text-red-800',
+                                            ];
+                                        @endphp
+                                        @if ($status)
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ $statusClasses[$status] }}">
+                                                {{ ucfirst($status) }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500">
+                                                Not Checked
+                                            </span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         <div class="bg-white shadow-sm rounded-xl border border-gray-100 p-6">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-semibold text-gray-900">
@@ -132,26 +205,59 @@
                 </h2>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="sm:hidden bg-gray-50 p-4 rounded-lg">
+                <div class="space-y-3">
+                    @forelse ($record->materials as $material)
+                        <div class="bg-white rounded-lg shadow-sm p-4">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-base font-semibold text-gray-900">{{ $material->name }}</h3>
+                                    <p class="text-sm text-gray-600 mt-0.5 truncate">{{ $material->unit ?? '—' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 border-t border-gray-100 pt-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ __('Quantity') }}</span>
+                                    <span class="font-medium text-gray-900">
+                                        {{ $material->quantity === null ? '—' : rtrim(rtrim((string) $material->quantity, '0'), '.') }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">{{ __('Cost') }}</span>
+                                    <span class="font-medium text-gray-900">₱{{ number_format($material->unit_cost, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm pt-2 border-t border-gray-100">
+                                    <span class="text-gray-900 font-medium">{{ __('Total cost') }}</span>
+                                    <span class="font-semibold text-gray-900">₱{{ number_format($material->total_cost, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+                            <p class="text-gray-500">{{ __('No materials recorded for this maintenance.') }}</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="hidden sm:block overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Name') }}
+                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider" style="width: 30%">
+                                {{ __('Item') }}
                             </th>
-                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Description') }}
+                            <th class="px-3 py-2 text-left font-medium text-gray-500 uppercase tracking-wider" style="width: 25%">
+                                {{ __('Part number') }}
                             </th>
-                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider" style="width: 10%">
                                 {{ __('Quantity') }}
                             </th>
-                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Unit') }}
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider" style="width: 15%">
+                                {{ __('Cost') }}
                             </th>
-                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Unit cost') }}
-                            </th>
-                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-3 py-2 text-right font-medium text-gray-500 uppercase tracking-wider" style="width: 20%">
                                 {{ __('Total cost') }}
                             </th>
                         </tr>
@@ -163,13 +269,10 @@
                                     {{ $material->name }}
                                 </td>
                                 <td class="px-3 py-2 whitespace-nowrap text-gray-700">
-                                    {{ $material->description ?? '—' }}
-                                </td>
-                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
-                                    {{ $material->quantity }}
-                                </td>
-                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
                                     {{ $material->unit ?? '—' }}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
+                                    {{ $material->quantity === null ? '—' : rtrim(rtrim((string) $material->quantity, '0'), '.') }}
                                 </td>
                                 <td class="px-3 py-2 whitespace-nowrap text-right text-gray-700">
                                     ₱{{ number_format($material->unit_cost, 2) }}
@@ -180,7 +283,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-3 py-4 text-center text-gray-500">
+                                <td colspan="5" class="px-3 py-4 text-center text-gray-500">
                                     {{ __('No materials recorded for this maintenance.') }}
                                 </td>
                             </tr>

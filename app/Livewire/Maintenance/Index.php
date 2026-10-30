@@ -4,28 +4,37 @@ declare(strict_types=1);
 
 namespace App\Livewire\Maintenance;
 
+use App\Exports\MaintenanceRecordsExport;
+use App\Models\ApprovalRequest;
 use App\Models\MaintenanceMaterial;
 use App\Models\MaintenanceRecord;
 use App\Models\Vehicle;
+use App\Services\Maintenance\NextMaintenanceCalculator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class Index extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     public ?int $vehicleFilter = null;
+    public string $sortField = 'performed_at';
+    public string $sortDirection = 'desc';
 
     public bool $showModal = false;
 
     public ?int $vehicle_id = null;
     public ?string $performed_at = null;
+    public string $performed_by = '';
     public ?int $odometer_reading = null;
     public string $description_of_work = '';
     public float $personnel_labor_cost = 0.0;
@@ -35,11 +44,39 @@ class Index extends Component
 
     public array $materials = [];
 
+    public array $checklist = [];
+
+    public const CHECKLIST_ITEMS = [
+        'Engine Oil',
+        'Fan Belt',
+        'Aircon Belt',
+        'Freon',
+        'Brake Fluid',
+        'Clutch Fluid',
+        'Power Steering Fluid',
+        'A.T.F.',
+        'Coolant',
+        'Windshield Washer',
+        'Radiator Hoses',
+        'Radiator Cap',
+        'Battery H2O / Terminal',
+        'Air Filter',
+        'Lights',
+        'Engine Idling Speed',
+        'Wiper Blade',
+        'Tire Pressure',
+        'Chassis Lubrication',
+        'Oil Filter',
+        'Transmission Fluid',
+        'Differential Fluid',
+    ];
+
     protected function rules(): array
     {
         return [
             'vehicle_id' => ['required', 'integer', 'exists:vehicles,id'],
             'performed_at' => ['required', 'date'],
+            'performed_by' => ['required', 'string', 'max:255'],
             'odometer_reading' => ['required', 'integer'],
             'description_of_work' => ['required', 'string'],
             'personnel_labor_cost' => ['required', 'numeric', 'min:0'],
@@ -50,18 +87,28 @@ class Index extends Component
             'materials.*.quantity' => ['nullable', 'numeric', 'min:0'],
             'materials.*.unit' => ['nullable', 'string', 'max:50'],
             'materials.*.unit_cost' => ['nullable', 'numeric', 'min:0'],
+            'checklist' => ['nullable', 'array'],
+            'checklist.*' => ['nullable', 'string', 'in:good,fair,bad'],
         ];
+    }
+
+    public function mount(): void
+    {
+        $this->authorize('viewAny', MaintenanceRecord::class);
     }
 
     #[Layout('layouts.app')]
     public function render(): View
     {
         $records = $this->getRecords();
-        $vehicles = Vehicle::orderBy('plate_number')->get();
+        $vehicles = Vehicle::query()->orderBy('plate_number')->get();
 
         return view('livewire.maintenance.index', [
             'records' => $records,
             'vehicles' => $vehicles,
+            'canCreate' => auth()->user()?->can('create', MaintenanceRecord::class) ?? false,
+            'canExport' => auth()->user()?->can('export', MaintenanceRecord::class) ?? false,
+            'checklistItems' => self::CHECKLIST_ITEMS,
         ]);
     }
 
@@ -70,8 +117,28 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function sortBy(string $field): void
+    {
+        $allowed = ['performed_at', 'odometer_reading', 'total_cost', 'next_maintenance_due_at', 'created_at'];
+
+        if (! in_array($field, $allowed, true)) {
+            return;
+        }
+
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = $field === 'performed_at' ? 'desc' : 'asc';
+        }
+
+        $this->resetPage();
+    }
+
     public function openCreateModal(): void
     {
+        $this->authorize('create', MaintenanceRecord::class);
+
         $this->resetForm();
         $this->showModal = true;
     }
@@ -95,6 +162,11 @@ class Index extends Component
 
     public function save(): void
     {
+        $this->authorize('create', MaintenanceRecord::class);
+
+        $user = auth()->user();
+        $isAdmin = $user?->isAdmin() ?? false;
+
         $this->validate();
 
         $performedAt = $this->performed_at
@@ -111,72 +183,119 @@ class Index extends Component
 
         $totalCost = $this->personnel_labor_cost + $materialsCostTotal;
 
-        $record = MaintenanceRecord::create([
+        $calculator = app(NextMaintenanceCalculator::class);
+
+        $nextDueAt = $calculator->calculateNextDueDate($this->next_maintenance_due_at, $performedAt);
+        $nextDueOdometer = $calculator->calculateNextDueOdometer(
+            $this->next_maintenance_due_odometer,
+            $this->odometer_reading
+        );
+
+        $vehicle = Vehicle::find($this->vehicle_id);
+        $assignedDriverId = $vehicle?->user_id;
+
+        $checklistData = array_filter($this->checklist, fn ($v) => $v !== null && $v !== '');
+
+        $data = [
             'vehicle_id' => $this->vehicle_id,
-            'performed_by_user_id' => Auth::id(),
-            'performed_at' => $performedAt,
+            'assigned_driver_id' => $assignedDriverId,
+            'performed_by_user_id' => null,
+            'performed_by' => $this->performed_by,
+            'performed_at' => $performedAt->toDateTimeString(),
             'odometer_reading' => $this->odometer_reading,
             'description_of_work' => $this->description_of_work,
+            'checklist' => $checklistData,
             'personnel_labor_cost' => $this->personnel_labor_cost,
             'materials_cost_total' => $materialsCostTotal,
             'total_cost' => $totalCost,
-            'next_maintenance_due_at' => $this->next_maintenance_due_at,
-            'next_maintenance_due_odometer' => $this->next_maintenance_due_odometer,
-        ]);
+            'next_maintenance_due_at' => $nextDueAt?->toDateString(),
+            'next_maintenance_due_odometer' => $nextDueOdometer,
+        ];
 
-        $vehicle = Vehicle::find($this->vehicle_id);
-
-        if ($vehicle !== null) {
-            $vehicle->update([
-                'current_odometer' => $this->odometer_reading,
-                'last_maintenance_at' => $performedAt,
-                'last_maintenance_odometer' => $this->odometer_reading,
-                'next_maintenance_due_at' => $this->next_maintenance_due_at ?? $vehicle->next_maintenance_due_at,
-                'next_maintenance_due_odometer' => $this->next_maintenance_due_odometer ?? $vehicle->next_maintenance_due_odometer,
-            ]);
-        }
-
+        $materialsData = [];
         foreach ($this->materials as $material) {
             if (! ($material['name'] ?? null)) {
                 continue;
             }
-
             $quantity = (float) ($material['quantity'] ?? 0);
             $unitCost = (float) ($material['unit_cost'] ?? 0);
-
-            MaintenanceMaterial::create([
-                'maintenance_record_id' => $record->id,
+            $materialsData[] = [
                 'name' => $material['name'],
                 'description' => $material['description'] ?? null,
                 'quantity' => $quantity,
                 'unit' => $material['unit'] ?? null,
                 'unit_cost' => $unitCost,
                 'total_cost' => $quantity * $unitCost,
+            ];
+        }
+
+        if ($isAdmin) {
+            $record = MaintenanceRecord::create($data);
+
+            if ($vehicle !== null) {
+                $calculator->updateVehicleAfterMaintenance(
+                    $vehicle,
+                    $record,
+                    $this->next_maintenance_due_at,
+                    $this->next_maintenance_due_odometer
+                );
+            }
+
+            foreach ($materialsData as $materialData) {
+                $materialData['maintenance_record_id'] = $record->id;
+                MaintenanceMaterial::create($materialData);
+            }
+
+            session()->flash('success', __('Maintenance record created successfully.'));
+        } else {
+            $data['_materials'] = $materialsData;
+
+            ApprovalRequest::create([
+                'requester_user_id' => $user->id,
+                'action' => ApprovalRequest::ACTION_CREATE,
+                'subject_type' => 'MaintenanceRecord',
+                'subject_id' => null,
+                'subject_label' => 'Maintenance for ' . ($vehicle?->plate_number ?? 'vehicle'),
+                'original_data' => null,
+                'proposed_data' => $data,
             ]);
+
+            session()->flash('success', __('Your submission has been sent for admin approval.'));
         }
 
         $this->resetForm();
         $this->showModal = false;
         $this->resetPage();
-
-        session()->flash('success', __('Maintenance record created successfully.'));
     }
 
     private function resetForm(): void
     {
         $this->vehicle_id = null;
         $this->performed_at = null;
+        $this->performed_by = '';
         $this->odometer_reading = null;
         $this->description_of_work = '';
         $this->personnel_labor_cost = 0.0;
         $this->next_maintenance_due_at = null;
         $this->next_maintenance_due_odometer = null;
         $this->materials = [];
+        $this->checklist = [];
         $this->addMaterialRow();
+    }
+
+    public function setChecklistStatus(string $item, string $status): void
+    {
+        if (($this->checklist[$item] ?? null) === $status) {
+            $this->checklist[$item] = null;
+        } else {
+            $this->checklist[$item] = $status;
+        }
     }
 
     public function exportCsv(): StreamedResponse
     {
+        $this->authorize('export', MaintenanceRecord::class);
+
         $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
@@ -215,7 +334,7 @@ class Index extends Component
                     $record->id,
                     $record->vehicle?->plate_number ?? '',
                     $record->performed_at?->format('Y-m-d H:i'),
-                    $record->performedBy?->name ?? '',
+                    $record->performed_by ?: ($record->performedBy?->name ?? ''),
                     $record->odometer_reading,
                     $record->description_of_work,
                     $record->personnel_labor_cost,
@@ -234,13 +353,29 @@ class Index extends Component
         ]);
     }
 
+    public function exportExcel(): BinaryFileResponse
+    {
+        $this->authorize('export', MaintenanceRecord::class);
+
+        $records = MaintenanceRecord::with(['vehicle', 'materials', 'performedBy'])
+            ->when($this->vehicleFilter, function ($query): void {
+                $query->where('vehicle_id', $this->vehicleFilter);
+            })
+            ->orderByDesc('performed_at')
+            ->get();
+
+        $filename = 'maintenance_records_' . now()->format('Y-m-d_His') . '.xlsx';
+
+        return Excel::download(new MaintenanceRecordsExport($records), $filename);
+    }
+
     private function getRecords(): LengthAwarePaginator
     {
         return MaintenanceRecord::with('vehicle')
             ->when($this->vehicleFilter, function ($query): void {
                 $query->where('vehicle_id', $this->vehicleFilter);
             })
-            ->orderByDesc('performed_at')
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(10);
     }
 }

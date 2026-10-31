@@ -1,158 +1,137 @@
-# Motorpool System
+# Motorpool Management System
 
-## Tech Stack
+A web application for managing a vehicle fleet and its day-to-day operations. It brings vehicle information, maintenance and repair history, trip planning, notifications, and user workflows together in one place.
 
-- **Backend**: Laravel 11 (PHP 8.2+)
-- **UI**: Blade + Livewire 3 + Alpine.js 3
-- **Styling**: Tailwind CSS 3 + daisyUI
-- **Database**: MySQL 8
-- **Auth**: Laravel Breeze (Livewire stack)
-- **Queues**: `database` driver (local)
-- **Mail**: SMTP via Mailpit in local development
+## Features
 
----
+### Fleet and vehicle management
 
-## Key Features (Current)
+- Maintain vehicle and equipment records, including make, model, plate number, status, odometer, and photos.
+- Search, sort, and filter the fleet.
+- Assign vehicles to users and track each vehicle's maintenance schedule.
+- Export vehicle records to CSV or Excel.
 
-- **Vehicles**
-  - CRUD management, search, status filters
-  - Tracks current odometer, last maintenance, and next due by date/odometer
-  - CSV export of vehicle list
+### Maintenance tracking
 
-- **Maintenance**
-  - Maintenance records linked to vehicles
-  - Materials/parts and cost breakdown
-  - Automatic updates of vehicle odometer and next-due fields
-  - CSV export of maintenance records
+- Create maintenance records linked to vehicles, including service dates, odometer readings, checklist results, materials, quantities, and costs.
+- Keep a history of work performed and the people involved.
+- Track the next maintenance due date and odometer reading.
+- Export maintenance records to CSV or Excel.
 
-- **Notifications**
-  - Email notifications when maintenance is due (date and/or odometer)
-  - Logged to `notification_logs` with status and error messages
-  - Retry failed notifications from the UI
+### Repair tracking
 
-- **Trip Tickets & Calendar**
-  - Trip tickets for vehicle usage (CRUD, per-vehicle)
-  - Calendar view showing maintenance events, due items, and trips
+- Record vehicle repairs, odometer readings, materials, and costs.
+- Review repair history and individual repair details.
+- Export repair records to CSV or Excel.
 
-- **Dashboard & UX**
-  - Dashboard summaries for vehicles and maintenance
-  - Livewire-based modals, validation, and loading states
+### Trip tickets and calendar
 
----
+- Create and manage trip tickets for vehicle use.
+- Browse scheduled trips and fleet maintenance events in a calendar, with month navigation.
+- View trip ticket details and relevant vehicle information.
 
-## Quick Start (Beginner-Friendly Local Setup)
+### Maintenance notifications
 
-Welcome! If you are new to software development, don't worry. This guide will walk you through setting up the project on your computer step-by-step.
+- Generate email reminders for maintenance coming due by date or odometer.
+- Review notification history and delivery status.
+- Retry failed notifications, archive entries, and export notification records.
+- View unread notifications from the in-app notification menu.
 
-### Step 1: Install Required Tools
+### Dashboard and activity
 
-You will need to install a few tools to run the project.
+- See fleet totals, maintenance counts, and upcoming or overdue maintenance on the dashboard.
+- Review recent maintenance and, where available, recent notification activity.
+- Browse activity history with search and filters.
 
-1. **Laragon**: This is a magical tool that includes almost everything you need (PHP, MySQL Database, Composer, and a terminal).
-   - Download **Laragon Full** from [laragon.org/download](https://laragon.org/download/) and install it.
-   - Once installed, open Laragon. Click the **gear icon** (top right) to open Preferences. Go to the **Services & Ports** tab and make sure the following toggles are enabled: **Apache**, **MySQL**, and **Mail Catcher** (for testing emails).
-   - After confirming, click **Start All** on the main Laragon window.
-2. **Node.js**: Needed for the frontend (user interface) parts of the app.
-   - Download the **LTS (Long Term Support)** version from [nodejs.org](https://nodejs.org/) and install it.
-3. **Git**: Needed to download the project code.
-   - Download from [git-scm.com/downloads](https://git-scm.com/downloads) and install it with default settings.
+### Accounts and approvals
 
-### Step 2: Download the Project
+- Support administrator, staff, and general user roles with role-appropriate access to system areas.
+- Let users register and track account approval status.
+- Manage users, roles, and account status.
+- Review and track approval requests and their outcomes.
 
-1. Click the **Terminal** button inside Laragon to open your command line.
-2. Type the following command and press Enter (replace `<your-repo-url>` with the actual link):
+## Technology
+
+- **Backend:** Laravel 12, PHP 8.2+
+- **UI:** Blade and Livewire 3
+- **Frontend assets:** Tailwind CSS 3 and Vite
+- **Database:** SQLite by default; MySQL and MariaDB are also supported through Laravel configuration
+- **Queue:** Database queue by default
+- **Mail:** Laravel mail configuration; local defaults write mail to the log
+
+## Local development
+
+### Requirements
+
+- PHP 8.2 or newer with the required Laravel extensions
+- Composer
+- Node.js and npm
+- SQLite, MySQL, or MariaDB
+
+### Setup
+
+1. Clone the repository and enter the project directory:
+
    ```bash
-   git clone <your-repo-url> motorpool-system
-   ```
-3. Move into the project folder you just downloaded:
-   ```bash
+   git clone <repository-url> motorpool-system
    cd motorpool-system
    ```
 
-### Step 3: Install Project Dependencies
+2. Install dependencies:
 
-While still inside the `motorpool-system` folder in your terminal, run these two commands to install the necessary background files:
-
-1. Install PHP dependencies:
    ```bash
    composer install
-   ```
-2. Install Javascript dependencies:
-   ```bash
    npm install
    ```
 
-### Step 4: Configure the Project
+3. Create and configure the environment file:
 
-1. **Create the settings file**: The project needs a settings file. We provide an example one. Copy it by running:
    ```bash
    cp .env.example .env
-   ```
-2. **Generate a security key**:
-   ```bash
    php artisan key:generate
    ```
-3. **Set up the Database**:
-   - Click the **Database** button in Laragon to open HeidiSQL. 
-   - Create a new database and name it `motorpool_db`.
-4. **Prepare the database tables**:
+
+   The example configuration uses SQLite. To use MySQL or MariaDB, update the `DB_*` values in `.env` and create the database before migrating.
+
+4. Create the database tables and build frontend assets:
+
    ```bash
    php artisan migrate
+   npm run build
    ```
 
-### Step 5: Start the Application!
+5. Start the local application:
 
-To run the project, you just need a single terminal window. Make sure you are inside the `motorpool-system` folder and run:
+   ```bash
+   composer run dev
+   ```
 
-```bash
-composer run dev
-```
+   This starts the Laravel server, queue worker, and Vite development server. Open [http://localhost:8000](http://localhost:8000) in your browser.
 
-This single command automatically starts the backend server, the frontend interface, and the background task queue all at once!
+### Maintenance notifications
 
-### Step 6: View the App
+The application defines scheduled maintenance-notification tasks. In an environment where scheduled reminders should run automatically, configure Laravel's scheduler according to the deployment platform. Mail delivery also requires a working mail transport configured through `.env`.
 
-Open your web browser (Chrome, Edge, Safari, etc.) and go to:
-**[http://localhost:8000](http://localhost:8000)**
+## Configuration
 
-Congratulations! You should now see the Motorpool System running on your computer.
+Common environment settings include:
 
----
+| Variable | Purpose | Default |
+| --- | --- | --- |
+| `APP_URL` | Base URL used by the application | `http://localhost:8000` |
+| `DB_CONNECTION` | Database connection | `sqlite` |
+| `QUEUE_CONNECTION` | Queue backend | `database` |
+| `MAIL_MAILER` | Mail transport | `log` |
+| `MOTORPOOL_LAYOUT` | Navigation layout (`topnav` or `sidebar`) | `topnav` |
+| `MOTORPOOL_MAINTENANCE_MONTHS_INTERVAL` | Default maintenance interval in months | `6` |
+| `MOTORPOOL_MAINTENANCE_KM_INTERVAL` | Default maintenance interval in kilometers | `5000` |
 
-## Environment Variables
+See `.env.example` and the files in `config/` for the full set of application options.
 
-Some notable environment variables:
+## Tests
 
-| Key               | Description            | Example / Default         |
-|-------------------|------------------------|----------------------------|
-| APP_URL           | Application URL        | `http://motorpool-system.test` |
-| MOTORPOOL_LAYOUT  | UI layout mode         | `sidebar`                  |
-| MAIL_MAILER       | Mail driver            | `smtp`                     |
-| MAIL_HOST         | Mail server            | `127.0.0.1`                |
-| MAIL_PORT         | Mail port (Mailpit)    | `1025`                     |
-| QUEUE_CONNECTION  | Queue driver           | `database`                 |
-
----
-
-## Testing
-
-Run the automated test suite:
+Run the automated test suite with:
 
 ```bash
 php artisan test
 ```
-
----
-
-## Security
-
-This project implements several security measures:
-
-- **Authorization Policies** – `VehiclePolicy`, `MaintenanceRecordPolicy`, `TripTicketPolicy`, `UserPolicy`
-- **Role-based Access** – `admin`, `staff`, `user` roles with appropriate permissions
-- **Livewire Security** – `#[Locked]` attributes on sensitive IDs, server-side authorization
-- **Input Validation** – All Livewire components validate input before processing
-- **File Upload Protection** – Strict MIME type validation, random filenames, secure storage
-- **XSS Prevention** – All Blade output is escaped by default
-
-
